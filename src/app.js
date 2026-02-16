@@ -101,7 +101,7 @@ markPaidBtn.addEventListener("click", async () => {
 
     // Recalculate filtered list to be sure
     const filtered = currentTransactions.filter(tx => {
-        const matchOwner = ownerFilter === "All" || (tx.owners && tx.owners.includes(ownerFilter));
+        const matchOwner = ownerFilter === "All" || tx.owners === ownerFilter;
         const matchMonth = monthFilter === "All" || (tx.date && tx.date.startsWith(monthFilter));
         return matchOwner && matchMonth;
     });
@@ -186,7 +186,7 @@ form.addEventListener("submit", async (e) => {
         details,
         amount,
         comment,
-        owners: [selectedOwner.value], // Keep as array for compatibility
+        owners: selectedOwner.value,
         status: "pending",
         createdAt: new Date()
     };
@@ -315,7 +315,7 @@ function renderTransactions() {
     const monthFilter = filterMonth.value;
 
     const filtered = currentTransactions.filter(tx => {
-        const matchOwner = ownerFilter === "All" || (tx.owners && tx.owners.includes(ownerFilter));
+        const matchOwner = ownerFilter === "All" || tx.owners === ownerFilter;
         const matchMonth = monthFilter === "All" || (tx.date && tx.date.startsWith(monthFilter));
         return matchOwner && matchMonth;
     });
@@ -350,7 +350,7 @@ function renderTransactions() {
             <td style="padding: 10px;">${tx.details}</td>
             <td style="padding: 10px;">${tx.amount}</td>
             <td style="padding: 10px; text-transform: capitalize;">${tx.status}</td>
-            <td style="padding: 10px;">${tx.owners ? tx.owners.join(", ") : ""}</td>
+            <td style="padding: 10px;">${tx.owners || ""}</td>
             <td style="padding: 10px; font-size: 0.9em; color: #666;">${tx.comment || ""}</td>
              <td style="padding: 10px;">${actionsHtml}</td>
         `;

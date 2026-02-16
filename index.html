@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore CRUD App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Firestore CRUD</h1>
+            <p>Real-time Item Management</p>
+        </header>
+
+        <main>
+            <section class="actions">
+                <button id="open-modal-btn" class="primary-btn">+ Add New Expense</button>
+            </section>
+
+            <!-- Modal Structure -->
+            <div id="expense-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-btn">&times;</span>
+                    <h2>Add Expense</h2>
+                    <form id="add-form" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div class="form-group">
+                            <label for="input-name" style="font-size: 0.8rem; color: #666;">Source (Document)</label>
+                            <select id="input-name" required
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                                <option value="" disabled selected>Select Source...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-date" style="font-size: 0.8rem; color: #666;">Date</label>
+                            <input type="date" id="input-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-details" style="font-size: 0.8rem; color: #666;">Details</label>
+                            <input type="text" id="input-details" placeholder="Details" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-amount" style="font-size: 0.8rem; color: #666;">Amount</label>
+                            <input type="number" id="input-amount" placeholder="Amount" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-comment" style="font-size: 0.8rem; color: #666;">Comment
+                                (Optional)</label>
+                            <textarea id="input-comment" placeholder="Comment" rows="2"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label
+                                style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 5px;">Owner</label>
+                            <div style="display: flex; gap: 15px;">
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="checkbox" name="owner" value="Home" style="width: auto;" checked> Home
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="checkbox" name="owner" value="Ujjwal" style="width: auto;"> Ujjwal
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" id="add-btn">Add Transaction</button>
+                    </form>
+                </div>
+            </div>
+            <!-- Transactions View Modal -->
+            <div id="transactions-modal" class="modal">
+                <div class="modal-content" style="max-width: 800px; width: 90%;">
+                    <span class="close-transactions-btn"
+                        style="float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                    <h2 id="transactions-title">Transactions</h2>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <select id="filter-owner" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="All">All Owners</option>
+                            <option value="Home">Home</option>
+                            <option value="Ujjwal">Ujjwal</option>
+                        </select>
+                        <select id="filter-month" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="All">All Months</option>
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button id="mark-paid-btn"
+                            style="padding: 5px 10px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">Mark
+                            All as Paid</button>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                            <thead>
+                                <tr style="background-color: #f2f2f2;">
+                                    <th style="padding: 10px; border: 1px solid #ddd;">Date</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">Details</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">Amount</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">Status</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">Owner</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">Comment</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-list">
+                                <!-- Transactions injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generic Alert/Confirm Modal -->
+            <div id="alert-modal" class="modal" style="z-index: 2000;">
+                <div class="modal-content" style="max-width: 400px; text-align: center;">
+                    <p id="alert-message" style="margin-bottom: 20px; font-size: 1.1rem;"></p>
+                    <div id="alert-actions" style="display: flex; justify-content: center; gap: 10px;">
+                        <button id="alert-ok-btn" class="primary-btn">OK</button>
+                        <button id="alert-cancel-btn" class="cancel-btn"
+                            style="background:#dc3545; padding: 10px 20px; color: white; border: none; border-radius: 4px; display: none;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <section class="content-list">
+                <h2>Items</h2>
+                <div id="loading">Loading items...</div>
+                <table id="items-table">
+                    <thead>
+                        <tr>
+                            <th>Expense Name</th>
+                            <th>Total Out.</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-list">
+                        <!-- Items will be injected here via JS -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="src/app.js"></script>
+</body>
+
+</html>

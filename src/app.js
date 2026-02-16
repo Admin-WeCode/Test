@@ -169,18 +169,15 @@ form.addEventListener("submit", async (e) => {
     const amount = Number(inputAmount.value);
     const comment = inputComment.value.trim();
 
-    const selectedOwners = [];
-    inputOwners.forEach(checkbox => {
-        if (checkbox.checked) selectedOwners.push(checkbox.value);
-    });
+    const selectedOwner = document.querySelector('input[name="owner"]:checked');
 
     if (!sourceId || !date || !details || !amount) {
         showNotification("Please fill in all required fields.");
         return;
     }
 
-    if (selectedOwners.length === 0) {
-        showNotification("Please select at least one Owner.");
+    if (!selectedOwner) {
+        showNotification("Please select an Owner.");
         return;
     }
 
@@ -189,7 +186,7 @@ form.addEventListener("submit", async (e) => {
         details,
         amount,
         comment,
-        owners: selectedOwners,
+        owners: [selectedOwner.value], // Keep as array for compatibility
         status: "pending",
         createdAt: new Date()
     };

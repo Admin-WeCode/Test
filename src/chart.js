@@ -275,6 +275,10 @@ function renderChart() {
     const totalSumData = actualChartData.reduce((a, b) => a + b, 0);
     const colors = chartLabels.map(l => getColor(l));
 
+    // Ensure small slices are visible/clickable
+    const minVisualValue = totalSumData * 0.03;
+    const visualData = actualChartData.map(val => Math.max(val, minVisualValue));
+
     const canvas = document.getElementById("category-chart");
     if (!canvas) return;
 
@@ -298,7 +302,7 @@ function renderChart() {
             data: {
                 labels: chartLabels,
                 datasets: [{
-                    data: actualChartData,
+                    data: visualData,
                     backgroundColor: colors,
                     borderWidth: 2,
                     borderColor: "#fff"

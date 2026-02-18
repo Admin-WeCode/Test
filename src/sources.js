@@ -1,4 +1,4 @@
-import { subscribeToItems, updateItem, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction } from "./firebase-service.js";
+import { subscribeToItems, updateItem, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction } from "./firebase-service.js";
 
 const listContainer = document.getElementById("items-list");
 const loadingIndicator = document.getElementById("loading");
@@ -27,6 +27,7 @@ const txEditForm = document.getElementById("tx-edit-form");
 const deleteTxBtn = document.getElementById("delete-tx-btn");
 
 const editTxDate = document.getElementById("edit-tx-date");
+const editTxSource = document.getElementById("edit-tx-source");
 const editTxCategory = document.getElementById("edit-tx-category");
 const editTxAmount = document.getElementById("edit-tx-amount");
 const editTxOwner = document.getElementById("edit-tx-owner");
@@ -40,8 +41,10 @@ const alertCancelBtn = document.getElementById("alert-cancel-btn");
 // State Variables
 let txUnsubscribe = null;
 let currentTransactions = [];
+let ALL_SOURCE_IDS = []; // Global list for the dropdown
 let currentSourceId = null;
 let editingTransactionId = null;
+let currentTxStatus = "pending";
 
 const CATEGORIES = ["Grocery", "Pets", "Fuel", "Dining", "LIC/OICL", "Travel", "Entertainment", "Utility Bills", "Rent", "Other"];
 
@@ -52,6 +55,13 @@ const populateEditCategories = () => {
     }
 };
 populateEditCategories();
+
+// Populate source dropdown
+const populateEditSources = () => {
+    if (editTxSource && ALL_SOURCE_IDS.length > 0) {
+        editTxSource.innerHTML = ALL_SOURCE_IDS.map(id => `<option value="${id}">${id}</option>`).join("");
+    }
+};
 
 function showNotification(message, isConfirmation = false, onConfirmCallback = null) {
     if (!alertMessage || !alertModal) return;
@@ -72,6 +82,8 @@ function showNotification(message, isConfirmation = false, onConfirmCallback = n
 // Subscribe to items for the table
 subscribeToItems((items) => {
     if (loadingIndicator) loadingIndicator.style.display = "none";
+    ALL_SOURCE_IDS = items.map(i => i.id);
+    populateEditSources();
     renderItems(items);
 
     // Deep Linking: Check for source parameter and auto-open modal
@@ -194,10 +206,12 @@ function renderTransactions() {
 
 function openTxEditModal(tx) {
     editingTransactionId = tx.id;
+    currentTxStatus = tx.status || "pending";
     if (editTxDate) editTxDate.value = tx.date;
-    if (editTxCategory) editTxCategory.value = tx.category;
+    if (editTxSource) editTxSource.value = currentSourceId;
+    if (editTxCategory) editTxCategory.value = tx.category || "Other";
     if (editTxAmount) editTxAmount.value = tx.amount;
-    if (editTxOwner) editTxOwner.value = tx.owners;
+    if (editTxOwner) editTxOwner.value = tx.owners || "Home";
     if (editTxDetails) editTxDetails.value = tx.details;
     if (editTxComment) editTxComment.value = tx.comment || "";
     if (txEditModal) txEditModal.show();
@@ -206,23 +220,58 @@ function openTxEditModal(tx) {
 if (txEditForm) {
     txEditForm.onsubmit = async (e) => {
         e.preventDefault();
+        const newSourceId = editTxSource.value;
         const updatedData = {
             date: editTxDate.value,
             category: editTxCategory.value,
             amount: Number(editTxAmount.value),
             owners: editTxOwner.value,
             details: editTxDetails.value,
-            comment: editTxComment.value
+            comment: editTxComment.value,
+            status: currentTxStatus
         };
         try {
-            await updateTransaction(currentSourceId, editingTransactionId, updatedData);
-            showNotification("Updated!");
-            txEditModal.hide();
+            if (newSourceId !== currentSourceId) {
+                await moveTransaction(currentSourceId, newSourceId, editingTransactionId, updatedData);
+                showNotification("Moved & Updated!");
+                txEditModal.hide();
+                txModal.hide(); // Hide the list modal as it's now stale
+            } else {
+                await updateTransaction(currentSourceId, editingTransactionId, updatedData);
+                showNotification("Updated!");
+                txEditModal.hide();
+            }
         } catch (err) {
-            showNotification("Failed to update.");
+            showNotification("Failed to save changes.");
         }
     };
 }
+
+if (deleteTxBtn) {
+    deleteTxBtn.onclick = () => showNotification("Delete transaction forever?", true, async () => {
+        try {
+            await deleteTransaction(currentSourceId, editingTransactionId);
+            showNotification("Deleted!");
+            txEditModal.hide();
+        } catch (err) {
+            showNotification("Failed to delete.");
+        }
+    });
+}
+
+if (markPaidBtn) {
+    markPaidBtn.onclick = () => {
+        const action = markPaidBtn.dataset.action;
+        const ids = currentTransactions
+            .filter(tx => (filterOwner.value === "All" || tx.owners === filterOwner.value) && (filterMonth.value === "All" || (tx.date && tx.date.startsWith(filterMonth.value))))
+            .map(tx => tx.id);
+
+        showNotification(`Mark ${ids.length} transactions as ${action === "paid" ? "Paid" : "Unpaid"}?`, true, () => bulkUpdateTransactionStatus(currentSourceId, ids, action));
+    };
+}
+
+if (filterOwner) filterOwner.onchange = renderTransactions;
+if (filterMonth) filterMonth.onchange = renderTransactions;
 
 if (deleteTxBtn) {
     deleteTxBtn.onclick = () => showNotification("Delete transaction forever?", true, async () => {

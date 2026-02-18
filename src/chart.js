@@ -1,4 +1,4 @@
-import { subscribeToItems, fetchAllTransactions, updateTransaction, deleteTransaction } from "./firebase-service.js";
+import { subscribeToItems, fetchAllTransactions, updateTransaction, deleteTransaction, moveTransaction } from "./firebase-service.js";
 
 // DOM Selectors with safety checks
 const filterSource = document.getElementById("chart-filter-source");
@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const txEditForm = document.getElementById("tx-edit-form");
 const deleteTxBtn = document.getElementById("delete-tx-btn");
 const editTxDate = document.getElementById("edit-tx-date");
+const editTxSource = document.getElementById("edit-tx-source");
 const editTxCategory = document.getElementById("edit-tx-category");
 const editTxAmount = document.getElementById("edit-tx-amount");
 const editTxOwner = document.getElementById("edit-tx-owner");
@@ -63,6 +64,7 @@ let allCategories = [];
 let selectedCategories = new Set();
 let editingTransactionId = null;
 let currentSourceId = null;
+let currentTxStatus = "pending";
 
 // Populate categories for edit modal
 const populateEditCategories = () => {
@@ -71,6 +73,13 @@ const populateEditCategories = () => {
     }
 };
 populateEditCategories();
+
+// Populate sources for edit modal
+const populateEditSources = () => {
+    if (editTxSource && sourceIds.length > 0) {
+        editTxSource.innerHTML = sourceIds.map(id => `<option value="${id}">${id}</option>`).join("");
+    }
+};
 
 function showNotification(message, isConfirmation = false, onConfirmCallback = null) {
     if (!alertMessage || !alertModal) return;
@@ -97,6 +106,7 @@ async function refreshData() {
 subscribeToItems(async (items) => {
     try {
         sourceIds = items.map(i => i.id);
+        populateEditSources();
 
         if (filterSource) {
             filterSource.innerHTML = `<option value="All">All Sources</option>` +
@@ -199,7 +209,10 @@ function showTransactionsModal(category) {
 function openTxEditModal(tx) {
     editingTransactionId = tx.id;
     currentSourceId = tx.sourceId;
+    currentTxStatus = tx.status || "pending";
+
     if (editTxDate) editTxDate.value = tx.date;
+    if (editTxSource) editTxSource.value = tx.sourceId;
     if (editTxCategory) editTxCategory.value = tx.category || "Other";
     if (editTxAmount) editTxAmount.value = tx.amount;
     if (editTxOwner) editTxOwner.value = tx.owners || "Home";
@@ -211,21 +224,33 @@ function openTxEditModal(tx) {
 if (txEditForm) {
     txEditForm.onsubmit = async (e) => {
         e.preventDefault();
+        const newSourceId = editTxSource.value;
         const updatedData = {
             date: editTxDate.value,
             category: editTxCategory.value,
             amount: Number(editTxAmount.value),
             owners: editTxOwner.value,
             details: editTxDetails.value,
-            comment: editTxComment.value
+            comment: editTxComment.value,
+            status: currentTxStatus // Keep the existing status
         };
+
         try {
-            await updateTransaction(currentSourceId, editingTransactionId, updatedData);
-            showNotification("Updated!");
+            if (newSourceId !== currentSourceId) {
+                // Move transaction to new source
+                await moveTransaction(currentSourceId, newSourceId, editingTransactionId, updatedData);
+                showNotification("Moved & Updated!");
+            } else {
+                // Just update within the same source
+                await updateTransaction(currentSourceId, editingTransactionId, updatedData);
+                showNotification("Updated!");
+            }
             txEditModal.hide();
+            detailsModal.hide(); // Hide details as transaction list is now stale
             refreshData();
         } catch (err) {
-            showNotification("Failed to update.");
+            console.error(err);
+            showNotification("Failed to save changes.");
         }
     };
 }

@@ -316,6 +316,45 @@ export async function deleteTransaction(sourceId, transactionId) {
 }
 
 /**
+ * Move a transaction from one source to another atomically
+ */
+export async function moveTransaction(oldSourceId, newSourceId, transactionId, data) {
+    try {
+        await runTransaction(db, async (transaction) => {
+            const oldTxRef = doc(db, COLLECTION_NAME, oldSourceId, "transactions", transactionId);
+            const newTxRef = doc(collection(db, COLLECTION_NAME, newSourceId, "transactions"));
+            const oldParentRef = doc(db, COLLECTION_NAME, oldSourceId);
+            const newParentRef = doc(db, COLLECTION_NAME, newSourceId);
+
+            const txDoc = await transaction.get(oldTxRef);
+            if (!txDoc.exists()) throw "Transaction does not exist!";
+
+            const oldTxData = txDoc.data();
+            const oldAmt = Number(oldTxData.amount) || 0;
+            const newAmt = Number(data.amount) || 0;
+            const oldStatus = oldTxData.status;
+            const newStatus = data.status || oldStatus;
+
+            // 1. Delete from old source
+            transaction.delete(oldTxRef);
+            const oldParentUpdates = { totalOutstanding: increment(-oldAmt) };
+            if (oldStatus === "pending") oldParentUpdates.outstanding = increment(-oldAmt);
+            transaction.update(oldParentRef, oldParentUpdates);
+
+            // 2. Add to new source
+            transaction.set(newTxRef, data);
+            const newParentUpdates = { totalOutstanding: increment(newAmt) };
+            if (newStatus === "pending") newParentUpdates.outstanding = increment(newAmt);
+            transaction.update(newParentRef, newParentUpdates);
+        });
+        console.log(`Transaction moved from ${oldSourceId} to ${newSourceId}`);
+    } catch (e) {
+        console.error("Error moving transaction atomically:", e);
+        throw e;
+    }
+}
+
+/**
  * Fetch all transactions across multiple sourceIds (one-shot, for analytics)
  * @param {string[]} sourceIds - Array of source document IDs
  * @returns {Promise<object[]>} - Flat array of transactions with sourceId attached

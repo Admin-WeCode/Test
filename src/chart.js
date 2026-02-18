@@ -1,12 +1,12 @@
 import { subscribeToItems, fetchAllTransactions } from "./firebase-service.js";
 
+// DOM Selectors with safety checks
 const filterSource = document.getElementById("chart-filter-source");
 const filterMonth = document.getElementById("chart-filter-month");
 const filterOwner = document.getElementById("chart-filter-owner");
 const noDataMsg = document.getElementById("no-data-msg");
 const summaryTbody = document.getElementById("summary-tbody");
 const masterCb = document.getElementById("master-category-cb");
-
 const modalTitle = document.getElementById("modal-title");
 const modalTbody = document.getElementById("modal-tbody");
 
@@ -15,7 +15,7 @@ let detailsModal;
 
 document.addEventListener('DOMContentLoaded', () => {
     const modalEl = document.getElementById('tx-details-modal');
-    if (modalEl) {
+    if (modalEl && typeof bootstrap !== 'undefined') {
         detailsModal = new bootstrap.Modal(modalEl);
     }
 });
@@ -26,7 +26,6 @@ const PALETTE = [
     "#00bcd4", "#8bc34a", "#607d8b", "#ff5722"
 ];
 
-// Stable category → color mapping so colors don't shift when filtering
 const categoryColorMap = {};
 let colorIndex = 0;
 function getColor(cat) {
@@ -40,39 +39,57 @@ let allTransactions = [];
 let chartInstance = null;
 let sourceIds = [];
 let allCategories = [];
-let selectedCategories = new Set(); // Using a Set for tracking selected categories manually
+let selectedCategories = new Set();
 
-// ── Bootstrap ────────────────────────────────────────────────────────────────
+// ── Bootstrap/Firestore ────────────────────────────────────────────────────────
 subscribeToItems(async (items) => {
-    sourceIds = items.map(i => i.id);
+    try {
+        sourceIds = items.map(i => i.id);
 
-    filterSource.innerHTML = `<option value="All">All Sources</option>` +
-        sourceIds.map(id => `<option value="${id}">${id}</option>`).join("");
+        if (filterSource) {
+            filterSource.innerHTML = `<option value="All">All Sources</option>` +
+                sourceIds.map(id => `<option value="${id}">${id}</option>`).join("");
+        }
 
-    allTransactions = await fetchAllTransactions(sourceIds);
+        allTransactions = await fetchAllTransactions(sourceIds);
 
-    const months = [...new Set(
-        allTransactions.filter(tx => tx.date).map(tx => tx.date.substring(0, 7))
-    )].sort().reverse();
+        const months = [...new Set(
+            allTransactions
+                .filter(tx => tx.date && typeof tx.date === 'string')
+                .map(tx => tx.date.substring(0, 7))
+        )].sort().reverse();
 
-    filterMonth.innerHTML = `<option value="All">All Months</option>` +
-        months.map(m => `<option value="${m}">${m}</option>`).join("");
+        if (filterMonth) {
+            filterMonth.innerHTML = `<option value="All">All Months</option>` +
+                months.map(m => `<option value="${m}">${m}</option>`).join("");
+        }
 
-    allCategories = [...new Set(
-        allTransactions.map(tx => tx.category || "Uncategorised")
-    )].sort();
+        allCategories = [...new Set(
+            allTransactions.map(tx => tx.category || "Uncategorised")
+        )].sort();
 
-    // Default: all categories selected
-    selectedCategories = new Set(allCategories);
-    if (masterCb) masterCb.checked = true;
+        // Default: all categories selected
+        selectedCategories = new Set(allCategories);
+        if (masterCb) masterCb.checked = true;
 
-    noDataMsg.style.display = "none";
-    renderChart();
+        if (noDataMsg) {
+            noDataMsg.classList.add("d-none");
+            noDataMsg.classList.remove("d-flex");
+        }
+        renderChart();
+    } catch (err) {
+        console.error("Critical error in analytics subscription:", err);
+        if (noDataMsg) {
+            noDataMsg.innerHTML = `<div class="alert alert-danger mb-0">Failed to load data. Please refresh.</div>`;
+            noDataMsg.classList.remove("d-none");
+            noDataMsg.classList.add("d-flex");
+        }
+    }
 });
 
-// ── Dropdown Filters ──────────────────────────────────────────────────────────
+// ── Event Listeners ──────────────────────────────────────────────────────────
 [filterSource, filterMonth, filterOwner].forEach(el => {
-    el.addEventListener("change", renderChart);
+    if (el) el.addEventListener("change", renderChart);
 });
 
 if (masterCb) {
@@ -88,6 +105,8 @@ if (masterCb) {
 
 // ── Modal Logic ──────────────────────────────────────────────────────────────
 function showTransactionsModal(category) {
+    if (!filterSource || !filterMonth || !filterOwner) return;
+
     const src = filterSource.value;
     const month = filterMonth.value;
     const owner = filterOwner.value;
@@ -100,19 +119,21 @@ function showTransactionsModal(category) {
             (cat === category);
     });
 
-    modalTitle.textContent = `Transactions: ${category}`;
-    modalTbody.innerHTML = filtered.map(tx => `
-        <tr>
-            <td>${tx.date}</td>
-            <td class="fw-medium">${tx.sourceId}</td>
-            <td>${tx.details}</td>
-            <td class="text-end fw-bold">₹${Number(tx.amount).toLocaleString()}</td>
-            <td><span class="badge bg-light text-dark border">${tx.owners || ""}</span></td>
-        </tr>
-    `).join("");
+    if (modalTitle) modalTitle.textContent = `Transactions: ${category}`;
+    if (modalTbody) {
+        modalTbody.innerHTML = filtered.map(tx => `
+            <tr>
+                <td>${tx.date}</td>
+                <td class="fw-medium">${tx.sourceId}</td>
+                <td>${tx.details}</td>
+                <td class="text-end fw-bold">₹${Number(tx.amount).toLocaleString()}</td>
+                <td><span class="badge bg-light text-dark border">${tx.owners || ""}</span></td>
+            </tr>
+        `).join("");
 
-    if (filtered.length === 0) {
-        modalTbody.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No transactions found.</td></tr>';
+        if (filtered.length === 0) {
+            modalTbody.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No transactions found.</td></tr>';
+        }
     }
 
     if (detailsModal) detailsModal.show();
@@ -120,12 +141,12 @@ function showTransactionsModal(category) {
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderChart() {
+    if (!filterSource || !filterMonth || !filterOwner || !noDataMsg) return;
+
     const src = filterSource.value;
     const month = filterMonth.value;
     const owner = filterOwner.value;
 
-    // First, aggregate all data for the table regardless of current 'selectedCategories'
-    // but honoring the dropdown filters (source, month, owner)
     const tableFiltered = allTransactions.filter(tx => {
         const matchSrc = src === "All" || tx.sourceId === src;
         const matchMonth = month === "All" || (tx.date && tx.date.startsWith(month));
@@ -142,13 +163,11 @@ function renderChart() {
     const categoriesInView = Object.keys(categoryTotals).sort();
     const grandTable = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
 
-    // Filtered data specifically for the CHART based on category selection
     const chartLabels = categoriesInView.filter(cat => selectedCategories.has(cat));
     const actualChartData = chartLabels.map(cat => categoryTotals[cat]);
     const totalSumData = actualChartData.reduce((a, b) => a + b, 0);
     const colors = chartLabels.map(l => getColor(l));
 
-    // Min-visual weight for visibility
     const minVisualValue = totalSumData * 0.03;
     const visualData = actualChartData.map(val => Math.max(val, minVisualValue));
 
@@ -156,95 +175,102 @@ function renderChart() {
 
     if (chartLabels.length === 0) {
         noDataMsg.textContent = selectedCategories.size === 0 ? "No categories selected." : "No data for filters.";
-        noDataMsg.style.display = "flex";
-        canvas.style.display = "none";
+        noDataMsg.classList.remove("d-none");
+        noDataMsg.classList.add("d-flex");
+        if (canvas) {
+            canvas.classList.add("d-none");
+            canvas.classList.remove("d-block");
+        }
         if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     } else {
-        noDataMsg.style.display = "none";
-        canvas.style.display = "block";
-        if (chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(canvas, {
-            type: "pie",
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    data: visualData,
-                    backgroundColor: colors,
-                    borderWidth: 2,
-                    borderColor: "#fff"
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                onClick: (event, elements) => {
-                    if (elements.length > 0) {
-                        const index = elements[0].index;
-                        showTransactionsModal(chartLabels[index]);
-                    }
+        noDataMsg.classList.add("d-none");
+        noDataMsg.classList.remove("d-flex");
+        if (canvas) {
+            canvas.classList.remove("d-none");
+            canvas.classList.add("d-block");
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(canvas, {
+                type: "pie",
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: visualData,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: "#fff"
+                    }]
                 },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => {
-                                const val = actualChartData[ctx.dataIndex];
-                                const pct = totalSumData > 0 ? ((val / totalSumData) * 100).toFixed(1) : 0;
-                                return ` ₹${val.toLocaleString()} (${pct}%)`;
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            showTransactionsModal(chartLabels[index]);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const val = actualChartData[ctx.dataIndex];
+                                    const pct = totalSumData > 0 ? ((val / totalSumData) * 100).toFixed(1) : 0;
+                                    return ` ₹${val.toLocaleString()} (${pct}%)`;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
-    // Render Summary Table
-    summaryTbody.innerHTML = categoriesInView.map(cat => {
-        const val = categoryTotals[cat];
-        const pct = grandTable > 0 ? ((val / grandTable) * 100).toFixed(1) : "0.0";
-        const isChecked = selectedCategories.has(cat);
-        const color = getColor(cat);
-        return `
-            <tr class="${isChecked ? '' : 'deselected-row'}">
-                <td class="text-center">
-                    <div class="form-check d-inline-block">
-                        <input class="form-check-input cat-item-cb" type="checkbox" data-cat="${cat}" ${isChecked ? 'checked' : ''}>
-                    </div>
-                </td>
-                <td class="cat-label-cell" data-cat="${cat}">
-                    <span class="color-dot" style="background:${color};"></span>
-                    ${cat}
-                </td>
-                <td class="text-end fw-medium text-dark">₹${val.toLocaleString()}</td>
-                <td class="text-end text-muted small">${pct}%</td>
+    if (summaryTbody) {
+        summaryTbody.innerHTML = categoriesInView.map(cat => {
+            const val = categoryTotals[cat];
+            const pct = grandTable > 0 ? ((val / grandTable) * 100).toFixed(1) : "0.0";
+            const isChecked = selectedCategories.has(cat);
+            const color = getColor(cat);
+            return `
+                <tr class="${isChecked ? '' : 'deselected-row'}">
+                    <td class="text-center">
+                        <div class="form-check d-inline-block">
+                            <input class="form-check-input cat-item-cb" type="checkbox" data-cat="${cat}" ${isChecked ? 'checked' : ''}>
+                        </div>
+                    </td>
+                    <td class="cat-label-cell" data-cat="${cat}">
+                        <span class="color-dot" style="background:${color};"></span>
+                        ${cat}
+                    </td>
+                    <td class="text-end fw-medium text-dark">₹${val.toLocaleString()}</td>
+                    <td class="text-end text-muted small">${pct}%</td>
+                </tr>
+            `;
+        }).join("") + (categoriesInView.length > 0 ? `
+            <tr class="table-light fw-bold text-dark border-top-2">
+                <td></td>
+                <td class="ps-4">Total Sum</td>
+                <td class="text-end">₹${grandTable.toLocaleString()}</td>
+                <td class="text-end">100%</td>
             </tr>
-        `;
-    }).join("") + (categoriesInView.length > 0 ? `
-        <tr class="table-light fw-bold text-dark border-top-2">
-            <td></td>
-            <td class="ps-4">Total Sum</td>
-            <td class="text-end">₹${grandTable.toLocaleString()}</td>
-            <td class="text-end">100%</td>
-        </tr>
-    ` : "");
+        ` : "");
 
-    // Attach Event Listeners to table elements
-    summaryTbody.querySelectorAll(".cat-item-cb").forEach(cb => {
-        cb.onchange = (e) => {
-            const cat = e.target.dataset.cat;
-            if (e.target.checked) selectedCategories.add(cat);
-            else selectedCategories.delete(cat);
+        summaryTbody.querySelectorAll(".cat-item-cb").forEach(cb => {
+            cb.onchange = (e) => {
+                const cat = e.target.dataset.cat;
+                if (e.target.checked) selectedCategories.add(cat);
+                else selectedCategories.delete(cat);
 
-            // Sync master checkbox
-            if (masterCb) {
-                masterCb.checked = Array.from(categoriesInView).every(c => selectedCategories.has(c));
-            }
-            renderChart();
-        };
-    });
+                if (masterCb) {
+                    masterCb.checked = Array.from(categoriesInView).every(c => selectedCategories.has(c));
+                }
+                renderChart();
+            };
+        });
 
-    summaryTbody.querySelectorAll(".cat-label-cell").forEach(cell => {
-        cell.onclick = () => showTransactionsModal(cell.dataset.cat);
-    });
+        summaryTbody.querySelectorAll(".cat-label-cell").forEach(cell => {
+            cell.onclick = () => showTransactionsModal(cell.dataset.cat);
+        });
+    }
 }

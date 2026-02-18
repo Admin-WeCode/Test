@@ -22,6 +22,7 @@ const CATEGORIES = [
     "Pets",
     "Fuel",
     "Dining",
+    "LIC/OICL",
     "Travel",
     "Entertainment",
     "Utility Bills",

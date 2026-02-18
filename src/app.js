@@ -1,4 +1,4 @@
-import { subscribeToItems, deleteItem, updateItem, addTransaction, subscribeToTransactions, updateTransactionStatus, markTransactionsAsPaid, updateTransaction, deleteTransaction } from "./firebase-service.js";
+import { subscribeToItems, deleteItem, updateItem, addTransaction, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction } from "./firebase-service.js";
 
 const form = document.getElementById("add-form");
 const listContainer = document.getElementById("items-list");
@@ -158,30 +158,17 @@ closeTxEditBtn.onclick = () => {
 filterOwner.addEventListener("change", renderTransactions);
 filterMonth.addEventListener("change", renderTransactions);
 
-// Bulk Mark as Paid
+// Bulk Mark as Paid/Unpaid
 markPaidBtn.addEventListener("click", async () => {
-    const ownerFilter = filterOwner.value;
-    const monthFilter = filterMonth.value;
+    const action = markPaidBtn.dataset.action; // 'paid' or 'pending'
+    const statusLabel = action === 'paid' ? 'Paid' : 'Unpaid (Pending)';
+    const ids = currentTransactionsForBulk.map(tx => tx.id);
 
-    // Recalculate filtered list to be sure
-    const filtered = currentTransactions.filter(tx => {
-        const matchOwner = ownerFilter === "All" || tx.owners === ownerFilter;
-        const matchMonth = monthFilter === "All" || (tx.date && tx.date.startsWith(monthFilter));
-        return matchOwner && matchMonth;
-    });
+    if (ids.length === 0) return;
 
-    const pendingIds = filtered
-        .filter(tx => tx.status === "pending")
-        .map(tx => tx.id);
-
-    if (pendingIds.length === 0) {
-        showNotification("No pending transactions to mark as paid.");
-        return;
-    }
-
-    showNotification(`Mark ${pendingIds.length} transactions as Paid?`, true, async () => {
+    showNotification(`Mark ${ids.length} transactions as ${statusLabel}?`, true, async () => {
         try {
-            await markTransactionsAsPaid(currentSourceId, pendingIds);
+            await bulkUpdateTransactionStatus(currentSourceId, ids, action);
             showNotification("Updated successfully!");
         } catch (e) {
             showNotification("Failed to update status.");
@@ -189,6 +176,8 @@ markPaidBtn.addEventListener("click", async () => {
         }
     });
 });
+
+let currentTransactionsForBulk = [];
 
 // State to track editing
 let editingId = null;
@@ -391,6 +380,9 @@ function renderTransactions() {
 
     txListContainer.innerHTML = "";
 
+    const allPaid = filtered.every(tx => tx.status === "paid");
+    currentTransactionsForBulk = filtered;
+
     if (filtered.length === 0) {
         txListContainer.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:15px; color: #999;">No transactions found.</td></tr>';
         markPaidBtn.disabled = true;
@@ -401,6 +393,16 @@ function renderTransactions() {
         markPaidBtn.disabled = false;
         markPaidBtn.style.opacity = "1";
         markPaidBtn.style.cursor = "pointer";
+
+        if (allPaid) {
+            markPaidBtn.innerText = "Mark All as Unpaid";
+            markPaidBtn.style.backgroundColor = "#e67e22"; // Orange
+            markPaidBtn.dataset.action = "pending";
+        } else {
+            markPaidBtn.innerText = "Mark All as Paid";
+            markPaidBtn.style.backgroundColor = "#27ae60"; // Green
+            markPaidBtn.dataset.action = "paid";
+        }
     }
 
     filtered.forEach(tx => {

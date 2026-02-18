@@ -191,36 +191,45 @@ export async function updateTransactionStatus(sourceId, transactionId, status) {
 }
 
 /**
- * Mark multiple transactions as paid
+ * Bulk update transactions status and apply atomic increments to parent outstanding
  */
-export async function markTransactionsAsPaid(sourceId, transactionIds) {
+export async function bulkUpdateTransactionStatus(sourceId, transactionIds, status) {
     try {
-        const totalPendingRef = collection(db, COLLECTION_NAME, sourceId, "transactions");
         const batch = writeBatch(db);
         const parentRef = doc(db, COLLECTION_NAME, sourceId);
 
-        let sumPaid = 0;
+        let delta = 0;
 
-        // Note: This still requires a fetch to get the amounts, 
-        // but we only fetch the ones we are marking paid.
         for (const id of transactionIds) {
             const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", id);
             const txDoc = await getDoc(txRef);
-            if (txDoc.exists() && txDoc.data().status === "pending") {
-                const amt = Number(txDoc.data().amount) || 0;
-                sumPaid += amt;
-                batch.update(txRef, { status: "paid" });
+
+            if (txDoc.exists()) {
+                const data = txDoc.data();
+                const amt = Number(data.amount) || 0;
+                const oldStatus = data.status;
+
+                if (oldStatus === status) continue;
+
+                batch.update(txRef, { status: status });
+
+                if (oldStatus === "pending" && status === "paid") {
+                    delta -= amt;
+                } else if (oldStatus === "paid" && status === "pending") {
+                    delta += amt;
+                }
             }
         }
 
-        if (sumPaid > 0) {
-            batch.update(parentRef, { outstanding: increment(-sumPaid) });
-            await batch.commit();
+        if (delta !== 0) {
+            batch.update(parentRef, { outstanding: increment(delta) });
         }
 
-        console.log(`Marked ${transactionIds.length} transactions as paid and decremented outstanding by ${sumPaid}`);
+        await batch.commit();
+
+        console.log(`Bulk updated ${transactionIds.length} transactions to ${status}. Total delta: ${delta}`);
     } catch (e) {
-        console.error("Error batch updating transactions:", e);
+        console.error("Error bulk updating transactions:", e);
         throw e;
     }
 }

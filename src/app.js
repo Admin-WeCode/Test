@@ -14,6 +14,22 @@ const inputDetails = document.getElementById("input-details");
 const inputAmount = document.getElementById("input-amount");
 const inputComment = document.getElementById("input-comment");
 const inputOwners = document.getElementsByName("owner");
+const inputCategory = document.getElementById("input-category");
+
+// Populate category dropdown
+const CATEGORIES = [
+    "Grocery",
+    "Pets",
+    "Fuel",
+    "Dining",
+    "Travel",
+    "Entertainment",
+    "Utility Bills",
+    "Rent",
+    "Other"
+];
+inputCategory.innerHTML = `<option value="" disabled selected>Select Category...</option>` +
+    CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
 
 // Modal Elements
 const modal = document.getElementById("expense-modal");
@@ -188,10 +204,11 @@ form.addEventListener("submit", async (e) => {
     const details = inputDetails.value.trim();
     const amount = Number(inputAmount.value);
     const comment = inputComment.value.trim();
+    const category = inputCategory.value;
 
     const selectedOwner = document.querySelector('input[name="owner"]:checked');
 
-    if (!sourceId || !date || !details || !amount) {
+    if (!sourceId || !date || !details || !amount || !category) {
         showNotification("Please fill in all required fields.");
         return;
     }
@@ -204,6 +221,7 @@ form.addEventListener("submit", async (e) => {
     const transactionData = {
         date,
         details,
+        category,
         amount,
         comment,
         owners: selectedOwner.value,

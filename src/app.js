@@ -192,6 +192,16 @@ function openTransactionsModal(sourceId) {
     });
 }
 
+// Quick-Add button in transactions modal
+const modalAddBtn = document.getElementById("modal-add-btn");
+if (modalAddBtn) {
+    modalAddBtn.onclick = () => {
+        if (inputName) inputName.value = currentSourceId;
+        if (inputDate) inputDate.valueAsDate = new Date();
+        mainModal.show();
+    };
+}
+
 function populateMonthFilter(transactions) {
     const months = new Set();
     transactions.forEach(tx => tx.date && months.add(tx.date.substring(0, 7)));

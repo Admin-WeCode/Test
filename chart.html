@@ -102,9 +102,14 @@
         <div class="modal fade" id="tx-details-modal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered">
                 <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-header border-0 px-4 pt-4 pb-0">
-                        <h2 class="modal-title fw-bold" id="modal-title">Transaction Details</h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header border-0 shadow-sm px-4 pt-4 pb-3 d-flex align-items-center">
+                        <h3 class="modal-title fw-bold mb-0" id="details-title">Transactions</h3>
+                        <button id="modal-add-btn"
+                            class="btn btn-primary btn-sm ms-3 d-flex align-items-center shadow-sm">
+                            <span class="material-icons fs-5 me-1">add</span> Add
+                        </button>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-4">
                         <div class="table-responsive">
@@ -123,6 +128,61 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Expense Modal (Bootstrap Native) -->
+        <div class="modal fade" id="expense-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header border-0 pb-0 px-4 pt-4">
+                        <h5 class="modal-title fw-bold">Add Transaction</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="add-form">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="input-name" required></select>
+                                <label>Source (Document)</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control" id="input-date" required>
+                                <label>Date</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="input-details" placeholder="Details"
+                                    required>
+                                <label>Details</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="input-category" required></select>
+                                <label>Category</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="number" class="form-control" id="input-amount" step="0.01" required>
+                                <label>Amount (₹)</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <textarea class="form-control" id="input-comment" style="height: 100px"
+                                    placeholder="Comment"></textarea>
+                                <label>Comment (Optional)</label>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label d-block text-muted small fw-bold mb-2">OWNER</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="owner" id="owner-home" value="Home"
+                                        checked>
+                                    <label class="btn btn-outline-primary" for="owner-home">Home</label>
+                                    <input type="radio" class="btn-check" name="owner" id="owner-ujjwal" value="Ujjwal">
+                                    <label class="btn btn-outline-primary" for="owner-ujjwal">Ujjwal</label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 py-3 mt-2 shadow">
+                                <span class="material-icons align-middle me-1">save</span> Add Transaction
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

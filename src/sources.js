@@ -1,19 +1,21 @@
-import { subscribeToItems, updateItem, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction } from "./firebase-service.js";
+import { subscribeToItems, updateItem, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction, addTransaction } from "./firebase-service.js";
 
 const listContainer = document.getElementById("items-list");
 const loadingIndicator = document.getElementById("loading");
 
 // Bootstrap Modal Instances
-let txModal, txEditModal, alertModal;
+let txModal, txEditModal, alertModal, mainRecordModal;
 
 document.addEventListener('DOMContentLoaded', () => {
     const txModalEl = document.getElementById('transactions-modal');
     const txEditModalEl = document.getElementById('tx-edit-modal');
     const alertModalEl = document.getElementById('alert-modal');
+    const mainRecordModalEl = document.getElementById('expense-modal');
 
     if (txModalEl) txModal = new bootstrap.Modal(txModalEl);
     if (txEditModalEl) txEditModal = new bootstrap.Modal(txEditModalEl);
     if (alertModalEl) alertModal = new bootstrap.Modal(alertModalEl);
+    if (mainRecordModalEl) mainRecordModal = new bootstrap.Modal(mainRecordModalEl);
 });
 
 // Selectors for Modal Elements
@@ -34,6 +36,15 @@ const editTxOwner = document.getElementById("edit-tx-owner");
 const editTxDetails = document.getElementById("edit-tx-details");
 const editTxComment = document.getElementById("edit-tx-comment");
 
+// Selectors for Add Modal
+const form = document.getElementById("add-form");
+const inputName = document.getElementById("input-name");
+const inputDate = document.getElementById("input-date");
+const inputDetails = document.getElementById("input-details");
+const inputAmount = document.getElementById("input-amount");
+const inputComment = document.getElementById("input-comment");
+const inputCategory = document.getElementById("input-category");
+
 const alertMessage = document.getElementById("alert-message");
 const alertOkBtn = document.getElementById("alert-ok-btn");
 const alertCancelBtn = document.getElementById("alert-cancel-btn");
@@ -50,16 +61,18 @@ const CATEGORIES = ["Grocery", "Pets", "Fuel", "Dining", "LIC/OICL", "Travel", "
 
 // Populate categories for edit modal
 const populateEditCategories = () => {
-    if (editTxCategory) {
-        editTxCategory.innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
-    }
+    const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
+    if (editTxCategory) editTxCategory.innerHTML = opts;
+    if (inputCategory) inputCategory.innerHTML = `<option value="" disabled selected>Select Category...</option>` + opts;
 };
 populateEditCategories();
 
 // Populate source dropdown
 const populateEditSources = () => {
-    if (editTxSource && ALL_SOURCE_IDS.length > 0) {
-        editTxSource.innerHTML = ALL_SOURCE_IDS.map(id => `<option value="${id}">${id}</option>`).join("");
+    if (ALL_SOURCE_IDS.length > 0) {
+        const opts = ALL_SOURCE_IDS.map(id => `<option value="${id}">${id}</option>`).join("");
+        if (editTxSource) editTxSource.innerHTML = opts;
+        if (inputName) inputName.innerHTML = `<option value="" disabled selected>Source...</option>` + opts;
     }
 };
 
@@ -133,6 +146,16 @@ function openTransactionsModal(sourceId) {
         populateMonthFilter(transactions);
         renderTransactions();
     });
+}
+
+// Quick-Add button in transactions modal
+const modalAddBtn = document.getElementById("modal-add-btn");
+if (modalAddBtn) {
+    modalAddBtn.onclick = () => {
+        if (inputName) inputName.value = currentSourceId;
+        if (inputDate) inputDate.valueAsDate = new Date();
+        if (mainRecordModal) mainRecordModal.show();
+    };
 }
 
 function populateMonthFilter(transactions) {
@@ -217,6 +240,32 @@ function openTxEditModal(tx) {
     if (txEditModal) txEditModal.show();
 }
 
+if (form) {
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const sourceId = inputName.value;
+        const selectedOwner = document.querySelector('input[name="owner"]:checked');
+        const transactionData = {
+            date: inputDate.value,
+            details: inputDetails.value.trim(),
+            category: inputCategory.value,
+            amount: Number(inputAmount.value),
+            comment: inputComment.value.trim(),
+            owners: selectedOwner ? selectedOwner.value : "Home",
+            status: "pending",
+            createdAt: new Date()
+        };
+        try {
+            await addTransaction(sourceId, transactionData);
+            showNotification("Added!");
+            form.reset();
+            if (mainRecordModal) mainRecordModal.hide();
+        } catch (error) {
+            showNotification("Failed to add.");
+        }
+    };
+}
+
 if (txEditForm) {
     txEditForm.onsubmit = async (e) => {
         e.preventDefault();
@@ -246,6 +295,32 @@ if (txEditForm) {
         }
     };
 }
+
+if (deleteTxBtn) {
+    deleteTxBtn.onclick = () => showNotification("Delete transaction forever?", true, async () => {
+        try {
+            await deleteTransaction(currentSourceId, editingTransactionId);
+            showNotification("Deleted!");
+            txEditModal.hide();
+        } catch (err) {
+            showNotification("Failed to delete.");
+        }
+    });
+}
+
+if (markPaidBtn) {
+    markPaidBtn.onclick = () => {
+        const action = markPaidBtn.dataset.action;
+        const ids = currentTransactions
+            .filter(tx => (filterOwner.value === "All" || tx.owners === filterOwner.value) && (filterMonth.value === "All" || (tx.date && tx.date.startsWith(filterMonth.value))))
+            .map(tx => tx.id);
+
+        showNotification(`Mark ${ids.length} transactions as ${action === "paid" ? "Paid" : "Unpaid"}?`, true, () => bulkUpdateTransactionStatus(currentSourceId, ids, action));
+    };
+}
+
+if (filterOwner) filterOwner.onchange = renderTransactions;
+if (filterMonth) filterMonth.onchange = renderTransactions;
 
 if (deleteTxBtn) {
     deleteTxBtn.onclick = () => showNotification("Delete transaction forever?", true, async () => {

@@ -79,6 +79,95 @@ const alertCancelBtn = document.getElementById("alert-cancel-btn");
 
 let onAlertConfirm = null;
 
+let sourceChart = null;
+
+function updateSourceChart(items) {
+    const ctx = document.getElementById('sourceChart').getContext('2d');
+
+    // Filter out sources with 0 total outstanding
+    const filteredItems = items.filter(item => (item.totalOutstanding || 0) > 0);
+
+    const labels = filteredItems.map(item => item.id);
+    const totalOutData = filteredItems.map(item => item.totalOutstanding || 0);
+    const outstandingData = filteredItems.map(item => item.outstanding || 0);
+
+    const colors = [
+        '#3498db', '#e67e22', '#2ecc71', '#9b59b6', '#f1c40f',
+        '#e74c3c', '#1abc9c', '#34495e', '#d35400', '#27ae60'
+    ];
+
+    if (sourceChart) {
+        sourceChart.data.labels = labels;
+        sourceChart.data.datasets[0].data = totalOutData;
+        sourceChart.data.datasets[0].backgroundColor = colors.slice(0, labels.length);
+        // Store current items in chart instance for tooltip reference
+        sourceChart.options.plugins.tooltip.externalData = filteredItems;
+        sourceChart.update();
+    } else {
+        sourceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: totalOutData,
+                    backgroundColor: colors.slice(0, labels.length),
+                    hoverOffset: 15,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '55%',
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const sourceId = labels[index];
+                        openTransactionsModal(sourceId);
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        align: 'center',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const index = context.dataIndex;
+                                const item = filteredItems[index];
+                                const total = item.totalOutstanding || 0;
+                                const pending = item.outstanding || 0;
+                                return [
+                                    `Total Out: ₹${total.toLocaleString()}`,
+                                    `Pending:  ₹${pending.toLocaleString()}`
+                                ];
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Source Distribution (Click to View)',
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        padding: { bottom: 10 }
+                    }
+                }
+            }
+        });
+    }
+}
+
 function showNotification(message, isConfirmation = false, onConfirmCallback = null) {
     alertMessage.textContent = message;
     alertModal.style.display = "block";
@@ -262,6 +351,7 @@ form.addEventListener("submit", async (e) => {
 // Render Function
 function renderItems(items) {
     listContainer.innerHTML = "";
+    updateSourceChart(items);
 
     if (items.length === 0) {
         listContainer.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999; padding:15px;">No expenses found.</td></tr>`;

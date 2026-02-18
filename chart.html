@@ -5,91 +5,132 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analytics – Expense</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Custom Material Theme -->
     <link rel="stylesheet" href="globals.css">
     <link rel="stylesheet" href="chart.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 </head>
 
-<body>
+<body class="py-4 py-md-5">
     <div class="container">
-        <div class="sub-header">
-            <a href="index.html" class="back-btn">← Back</a>
+        <div class="d-flex align-items-center mb-5 border-bottom pb-4">
+            <a href="index.html" class="btn btn-outline-primary btn-sm me-4 d-flex align-items-center shadow-sm">
+                <span class="material-icons align-middle me-1">arrow_back</span> Back
+            </a>
             <div>
-                <h1>Analytics</h1>
-                <p>Category-wise spending breakdown</p>
+                <h1 class="display-6 fw-bold text-primary mb-0">Analytics</h1>
+                <p class="text-muted mb-0">Category-wise spending breakdown</p>
             </div>
         </div>
 
-        <div class="filters-bar">
-            <div>
-                <label for="chart-filter-source">Source</label>
-                <select id="chart-filter-source">
-                    <option value="All">All Sources</option>
-                </select>
-            </div>
-            <div>
-                <label for="chart-filter-month">Month</label>
-                <select id="chart-filter-month">
-                    <option value="All">All Months</option>
-                </select>
-            </div>
-            <div>
-                <label for="chart-filter-owner">Owner</label>
-                <select id="chart-filter-owner">
-                    <option value="All">All Owners</option>
-                    <option value="Home">Home</option>
-                    <option value="Ujjwal">Ujjwal</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="analytics-main-row">
-            <div class="chart-wrap-large">
-                <canvas id="category-chart"></canvas>
-                <div class="no-data-msg" id="no-data-msg" style="display:flex;">Loading...</div>
-            </div>
-
-            <div class="table-container" style="flex-grow: 1; min-width: 350px; max-width: 600px; margin-top: 0;">
-                <table class="summary-table shadow-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 45px; text-align: center;"><input type="checkbox" id="master-category-cb"
-                                    checked title="Toggle All"></th>
-                            <th>Category</th>
-                            <th style="text-align: right;">Amount (₹)</th>
-                            <th style="text-align: right; width: 85px;">%</th>
-                        </tr>
-                    </thead>
-                    <tbody id="summary-tbody">
-                    </tbody>
-                </table>
+        <!-- Filters Section -->
+        <div class="card shadow-sm border-0 mb-4 bg-light bg-opacity-50">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-uppercase ls-1 text-muted">Source</label>
+                        <select id="chart-filter-source" class="form-select border-0 shadow-sm">
+                            <option value="All">All Sources</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-uppercase ls-1 text-muted">Month</label>
+                        <select id="chart-filter-month" class="form-select border-0 shadow-sm">
+                            <option value="All">All Months</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-uppercase ls-1 text-muted">Owner</label>
+                        <select id="chart-filter-owner" class="form-select border-0 shadow-sm">
+                            <option value="All">All Owners</option>
+                            <option value="Home">Home</option>
+                            <option value="Ujjwal">Ujjwal</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Transaction Details Modal -->
-        <div id="tx-details-modal" class="modal">
-            <div class="modal-content modal-content-wide">
-                <span class="close-btn" id="close-tx-modal">&times;</span>
-                <h2 id="modal-title">Transaction Details</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Source</th>
-                                <th>Details</th>
-                                <th>Amount (₹)</th>
-                                <th>Owner</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modal-tbody">
-                        </tbody>
-                    </table>
+        <!-- Charts and Table Section -->
+        <div class="row g-4 mb-5">
+            <!-- Chart Container -->
+            <div class="col-12 col-xl-5 d-flex justify-content-center">
+                <div class="card p-4 shadow-sm h-100 w-100" style="max-width: 500px;">
+                    <div class="position-relative d-flex align-items-center justify-content-center"
+                        style="min-height: 400px;">
+                        <canvas id="category-chart"></canvas>
+                        <div class="no-data-msg position-absolute d-flex align-items-center justify-content-center"
+                            id="no-data-msg">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="col-12 col-xl-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr class="bg-light">
+                                    <th style="width: 50px;" class="text-center align-middle">
+                                        <div class="form-check d-inline-block">
+                                            <input class="form-check-input" type="checkbox" id="master-category-cb"
+                                                checked title="Toggle All">
+                                        </div>
+                                    </th>
+                                    <th>Category</th>
+                                    <th class="text-end">Amount (₹)</th>
+                                    <th class="text-end" style="width: 100px;">%</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summary-tbody">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Details Modal (Bootstrap Native) -->
+        <div class="modal fade" id="tx-details-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header border-0 px-4 pt-4 pb-0">
+                        <h2 class="modal-title fw-bold" id="modal-title">Transaction Details</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="bg-light bg-opacity-75">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Source</th>
+                                        <th>Details</th>
+                                        <th class="text-end">Amount (₹)</th>
+                                        <th>Owner</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modal-tbody">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="src/chart.js"></script>
 </body>
 

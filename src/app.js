@@ -19,8 +19,7 @@ const CATEGORIES = ["Grocery", "Pets", "Fuel", "Dining", "LIC/OICL", "Travel", "
 inputCategory.innerHTML = `<option value="" disabled selected>Select Category...</option>` +
     CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
 
-// View Transactions Modal Elements
-const txModal = document.getElementById("transactions-modal");
+// DOM Selectors for transaction interactions
 const closeTxModalBtn = document.querySelector(".close-transactions-btn");
 const txListContainer = document.getElementById("transactions-list");
 const txTitle = document.getElementById("transactions-title");
@@ -31,8 +30,7 @@ let txUnsubscribe = null;
 let currentTransactions = [];
 let currentSourceId = null;
 
-// Edit Transaction Modal Elements
-const txEditModal = document.getElementById("tx-edit-modal");
+// Edit Transaction Form Selectors
 const txEditForm = document.getElementById("tx-edit-form");
 const closeTxEditBtn = document.getElementById("close-tx-edit-btn");
 const deleteTxBtn = document.getElementById("delete-tx-btn");
@@ -50,24 +48,36 @@ let editingTransactionId = null;
 document.getElementById("edit-tx-category").innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
 
 // Alert Modal Elements
-const alertModal = document.getElementById("alert-modal");
 const alertMessage = document.getElementById("alert-message");
 const alertOkBtn = document.getElementById("alert-ok-btn");
 const alertCancelBtn = document.getElementById("alert-cancel-btn");
 
+// Bootstrap Modal Instances
+let mainModal, txModal, txEditModal, alertModal;
+
+document.addEventListener('DOMContentLoaded', () => {
+    mainModal = new bootstrap.Modal(document.getElementById('expense-modal'));
+    txModal = new bootstrap.Modal(document.getElementById('transactions-modal'));
+    txEditModal = new bootstrap.Modal(document.getElementById('tx-edit-modal'));
+    alertModal = new bootstrap.Modal(document.getElementById('alert-modal'));
+});
+
 function showNotification(message, isConfirmation = false, onConfirmCallback = null) {
     alertMessage.textContent = message;
-    alertModal.style.display = "block";
+
     alertOkBtn.onclick = () => {
-        alertModal.style.display = "none";
+        alertModal.hide();
         if (isConfirmation && onConfirmCallback) onConfirmCallback();
     };
+
     if (isConfirmation) {
         alertCancelBtn.style.display = "inline-block";
-        alertCancelBtn.onclick = () => alertModal.style.display = "none";
+        alertCancelBtn.onclick = () => alertModal.hide();
     } else {
         alertCancelBtn.style.display = "none";
     }
+
+    alertModal.show();
 }
 
 let sourceChart = null;
@@ -156,8 +166,10 @@ function updateSourceChart(items) {
 function openTransactionsModal(sourceId) {
     currentSourceId = sourceId;
     txTitle.innerText = `Transactions: ${sourceId}`;
-    txListContainer.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:15px;">Loading...</td></tr>';
-    txModal.style.display = "block";
+    txListContainer.innerHTML = '<tr><td colspan="5" class="text-center p-4"><div class="spinner-border text-primary" role="status"></div></td></tr>';
+
+    txModal.show();
+
     filterOwner.value = "All";
     filterMonth.innerHTML = '<option value="All">All Months</option>';
     if (txUnsubscribe) txUnsubscribe();
@@ -166,7 +178,7 @@ function openTransactionsModal(sourceId) {
         populateMonthFilter(transactions);
         renderTransactions();
     }, (err) => {
-        txListContainer.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:15px; color:red;">Failed to load transactions.</td></tr>';
+        txListContainer.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-danger">Failed to load transactions.</td></tr>';
     });
 }
 
@@ -193,35 +205,42 @@ function renderTransactions() {
 
     txListContainer.innerHTML = "";
     if (filtered.length === 0) {
-        txListContainer.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:15px; color: #999;">No transactions found.</td></tr>';
+        txListContainer.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No transactions found.</td></tr>';
         markPaidBtn.disabled = true;
     } else {
         markPaidBtn.disabled = false;
         const allPaid = filtered.every(tx => tx.status === "paid");
-        markPaidBtn.innerText = allPaid ? "Mark All as Unpaid" : "Mark All as Paid";
-        markPaidBtn.style.backgroundColor = allPaid ? "#e67e22" : "#27ae60";
+        markPaidBtn.innerHTML = allPaid ?
+            `<span class="material-icons me-1">history</span> Mark All as Unpaid` :
+            `<span class="material-icons me-1">check_circle</span> Mark All as Paid`;
+
+        markPaidBtn.classList.remove("btn-success", "btn-warning");
+        markPaidBtn.classList.add(allPaid ? "btn-warning" : "btn-success");
         markPaidBtn.dataset.action = allPaid ? "pending" : "paid";
     }
 
     filtered.forEach(tx => {
         const row = document.createElement("tr");
-        row.className = "tx-row";
-        row.style.borderBottom = "1px solid #eee";
+        row.style.cursor = "pointer";
         row.onclick = (e) => !e.target.closest("button") && openTxEditModal(tx);
 
-        const actionsHtml = tx.status === "pending" ?
-            `<button class="mark-paid-single-btn" style="padding: 2px 5px; font-size: 0.8rem; background-color: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer;">Mark Paid</button>` :
-            `<button class="mark-unpaid-single-btn" style="padding: 2px 5px; font-size: 0.8rem; background-color: #e67e22; color: white; border: none; border-radius: 3px; cursor: pointer;">Mark Unpaid</button>`;
+        const badgeClass = tx.status === "paid" ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning";
+        const icon = tx.status === "paid" ? "check_circle" : "pending";
 
         row.innerHTML = `
-            <td style="padding: 10px;">${tx.date}</td>
-            <td style="padding: 10px;">${tx.details}</td>
-            <td style="padding: 10px;">₹${(tx.amount || 0).toLocaleString()}</td>
-            <td style="padding: 10px;">${tx.owners || ""}</td>
-            <td style="padding: 10px;">${actionsHtml}</td>
+            <td>${tx.date}</td>
+            <td class="fw-medium">${tx.details}</td>
+            <td class="fw-bold text-dark">₹${(tx.amount || 0).toLocaleString()}</td>
+            <td><span class="badge bg-light text-dark border">${tx.owners || ""}</span></td>
+            <td class="text-end">
+                <button class="btn btn-sm ${tx.status === "pending" ? 'btn-success' : 'btn-warning'} py-1 px-2">
+                    <span class="material-icons align-middle" style="font-size: 1.1rem;">${icon}</span>
+                </button>
+            </td>
         `;
 
-        row.querySelector("button").onclick = () => {
+        row.querySelector("button").onclick = (e) => {
+            e.stopPropagation();
             const newStatus = tx.status === "pending" ? "paid" : "pending";
             showNotification(`Mark as ${newStatus === "paid" ? "Paid" : "Unpaid"}?`, true, () => updateTransactionStatus(currentSourceId, tx.id, newStatus));
         };
@@ -237,37 +256,27 @@ function openTxEditModal(tx) {
     editTxOwner.value = tx.owners;
     editTxDetails.value = tx.details;
     editTxComment.value = tx.comment || "";
-    txEditModal.style.display = "block";
+    txEditModal.show();
 }
 
-// Global Modal Elements for "Add Expense" (Wait, Add Expense is actually Add Transaction in this app)
-const mainModal = document.getElementById("expense-modal");
+// Global Modal Elements for "Add Transaction"
 const openMainModalBtn = document.getElementById("open-modal-btn");
-const closeMainModalBtn = document.querySelector(".close-btn");
 
-// Event Listeners
-openMainModalBtn.onclick = () => {
-    mainModal.style.display = "block";
-    if (!inputDate.value) inputDate.valueAsDate = new Date();
-};
-closeMainModalBtn.onclick = () => mainModal.style.display = "none";
+// Event Listeners for Opening Modals
+if (openMainModalBtn) {
+    openMainModalBtn.onclick = () => {
+        mainModal.show();
+        if (!inputDate.value) inputDate.valueAsDate = new Date();
+    };
+}
 
-closeTxModalBtn.onclick = () => {
-    txModal.style.display = "none";
-    if (txUnsubscribe) txUnsubscribe();
-};
-
-closeTxEditBtn.onclick = () => txEditModal.style.display = "none";
-
-window.onclick = (event) => {
-    if (event.target == mainModal) mainModal.style.display = "none";
-    if (event.target == txModal) {
-        txModal.style.display = "none";
-        if (txUnsubscribe) txUnsubscribe();
+// Handle unsubscription when the transactions modal is closed (any way: ESC, backdrop, or close button)
+document.getElementById('transactions-modal').addEventListener('hidden.bs.modal', () => {
+    if (txUnsubscribe) {
+        txUnsubscribe();
+        txUnsubscribe = null;
     }
-    if (event.target == txEditModal) txEditModal.style.display = "none";
-    if (event.target == alertModal) alertModal.style.display = "none";
-};
+});
 
 form.onsubmit = async (e) => {
     e.preventDefault();
@@ -295,7 +304,7 @@ form.onsubmit = async (e) => {
         await addTransaction(sourceId, transactionData);
         showNotification("Transaction added successfully!");
         form.reset();
-        mainModal.style.display = "none";
+        mainModal.hide();
         document.getElementById("input-date").valueAsDate = new Date();
     } catch (error) {
         showNotification("Failed to add transaction.");
@@ -315,7 +324,7 @@ txEditForm.onsubmit = async (e) => {
     try {
         await updateTransaction(currentSourceId, editingTransactionId, updatedData);
         showNotification("Updated!");
-        txEditModal.style.display = "none";
+        txEditModal.hide();
     } catch (err) {
         showNotification("Failed to update.");
     }
@@ -326,7 +335,7 @@ deleteTxBtn.onclick = () => {
         try {
             await deleteTransaction(currentSourceId, editingTransactionId);
             showNotification("Deleted!");
-            txEditModal.style.display = "none";
+            txEditModal.hide();
         } catch (err) {
             showNotification("Failed to delete.");
         }

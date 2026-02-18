@@ -4,187 +4,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense</title>
+    <title>Expense Tracker</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Custom Material Theme -->
     <link rel="stylesheet" href="globals.css">
     <link rel="stylesheet" href="index.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body>
-    <div class="container">
-        <header>
-            <h1>Expense</h1>
-            <p>Expense Management</p>
+<body class="py-4 py-md-5">
+    <div class="container overflow-hidden">
+        <header class="text-center mb-5">
+            <h1 class="display-5 fw-bold text-primary">Expense</h1>
+            <p class="text-muted">Smart Financial Management</p>
         </header>
 
         <main>
-            <section class="actions">
-                <button id="open-modal-btn" class="primary-btn">+ Add New Expense</button>
-                <a href="chart.html" class="secondary-btn">📊 Analytics</a>
+            <!-- Top Actions -->
+            <section class="d-flex justify-content-between align-items-center mb-4 gap-2">
+                <button id="open-modal-btn" class="btn btn-primary d-flex align-items-center">
+                    <span class="material-icons me-2">add</span> Add New Expense
+                </button>
+                <a href="chart.html" class="btn btn-outline-secondary d-flex align-items-center">
+                    <span class="material-icons me-2">analytics</span> Analytics
+                </a>
             </section>
 
-            <div class="dashboard-grid">
-                <!-- Chart Section -->
-                <div class="dashboard-chart-section">
-                    <a href="sources.html" title="View Detailed Table" class="view-link-icon">👁️</a>
-                    <canvas id="sourceChart"></canvas>
-                </div>
-
-                <!-- Summary Cards Section -->
-                <div class="dashboard-summary-section">
-                    <div class="summary-card">
-                        <span class="label">Outstanding</span>
-                        <span id="total-outstanding-val" class="value value-outstanding">₹0</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="label">Total Out.</span>
-                        <span id="total-out-val" class="value value-total">₹0</span>
+            <!-- Dashboard Content -->
+            <div class="row g-4 mb-5">
+                <!-- Chart Area -->
+                <div class="col-12 col-lg-8">
+                    <div class="card h-100 p-3 position-relative">
+                        <a href="sources.html" title="View Detailed Table"
+                            class="position-absolute top-0 end-0 m-3 text-secondary text-decoration-none opacity-50 grey-hover">
+                            <span class="material-icons">visibility</span>
+                        </a>
+                        <div class="card-body p-0" style="min-height: 400px;">
+                            <canvas id="sourceChart"></canvas>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Modal Structure (Add Expense) -->
-            <div id="expense-modal" class="modal">
-                <div class="modal-content">
-                    <span class="close-btn">&times;</span>
-                    <h2>Add Expense</h2>
-                    <form id="add-form" class="flex-column">
-                        <div class="form-group">
-                            <label for="input-name">Source (Document)</label>
-                            <select id="input-name" required>
-                                <option value="" disabled selected>Select Source...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-date">Date</label>
-                            <input type="date" id="input-date" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-details">Details</label>
-                            <input type="text" id="input-details" placeholder="Details" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-category">Category</label>
-                            <select id="input-category" required></select>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-amount">Amount</label>
-                            <input type="number" id="input-amount" placeholder="Amount" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-comment">Comment (Optional)</label>
-                            <textarea id="input-comment" placeholder="Comment" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Owner</label>
-                            <div class="flex-group">
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                    <input type="radio" name="owner" value="Home" style="width: auto;" checked> Home
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                    <input type="radio" name="owner" value="Ujjwal" style="width: auto;"> Ujjwal
-                                </label>
+                <!-- Summary Cards Area -->
+                <div class="col-12 col-lg-4">
+                    <div class="d-flex flex-column h-100 gap-3">
+                        <div class="card flex-fill">
+                            <div class="card-body d-flex flex-column justify-content-center px-4">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-2 ls-1">Outstanding</h6>
+                                <h2 id="total-outstanding-val" class="mb-0 fw-bold text-warning">₹0</h2>
                             </div>
                         </div>
-                        <button type="submit" id="add-btn" class="primary-btn">Add Transaction</button>
-                    </form>
-                </div>
-            </div>
-
-
-            <!-- Transactions View Modal -->
-            <div id="transactions-modal" class="modal">
-                <div class="modal-content modal-content-wide">
-                    <span class="close-btn close-transactions-btn">&times;</span>
-                    <h2 id="transactions-title">Transactions</h2>
-
-                    <div class="filters-bar" style="margin-bottom: 15px;">
-                        <select id="filter-owner">
-                            <option value="All">All Owners</option>
-                            <option value="Home">Home</option>
-                            <option value="Ujjwal">Ujjwal</option>
-                        </select>
-                        <select id="filter-month">
-                            <option value="All">All Months</option>
-                        </select>
-                        <button id="mark-paid-btn" class="success-btn"
-                            style="margin-left: auto; padding: 6px 12px; border-radius: 6px;">
-                            Mark All as Paid
-                        </button>
-                    </div>
-
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Details</th>
-                                    <th>Amount</th>
-                                    <th>Owner</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactions-list">
-                            </tbody>
-                        </table>
+                        <div class="card flex-fill">
+                            <div class="card-body d-flex flex-column justify-content-center px-4">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-2 ls-1">Total Out</h6>
+                                <h2 id="total-out-val" class="mb-0 fw-bold text-primary">₹0</h2>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Transaction Edit Modal -->
-            <div id="tx-edit-modal" class="modal">
-                <div class="modal-content">
-                    <span class="close-btn" id="close-tx-edit-btn">&times;</span>
-                    <h3>Edit Transaction</h3>
-                    <form id="tx-edit-form" class="flex-column">
-                        <div class="form-group">
-                            <label>Date</label>
-                            <input type="date" id="edit-tx-date" required>
+            <!-- Add Expense Modal (Bootstrap Native) -->
+            <div class="modal fade" id="expense-modal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold">Add Transaction</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="form-group">
-                            <label>Category</label>
-                            <select id="edit-tx-category" required></select>
+                        <div class="modal-body p-4">
+                            <form id="add-form">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="input-name" required>
+                                        <option value="" disabled selected>Select Source...</option>
+                                    </select>
+                                    <label for="input-name">Source (Document)</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input type="date" class="form-control" id="input-date" required>
+                                    <label for="input-date">Date</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="input-details" placeholder="Details"
+                                        required>
+                                    <label for="input-details">Details</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="input-category" required></select>
+                                    <label for="input-category">Category</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="input-amount" placeholder="Amount"
+                                        step="0.01" required>
+                                    <label for="input-amount">Amount</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="input-comment" style="height: 100px"
+                                        placeholder="Comment"></textarea>
+                                    <label for="input-comment">Comment (Optional)</label>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label d-block text-muted small fw-bold mb-2">OWNER</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="owner" id="owner-home" value="Home"
+                                            checked>
+                                        <label class="btn btn-outline-primary" for="owner-home">Home</label>
+                                        <input type="radio" class="btn-check" name="owner" id="owner-ujjwal"
+                                            value="Ujjwal">
+                                        <label class="btn btn-outline-primary" for="owner-ujjwal">Ujjwal</label>
+                                    </div>
+                                </div>
+                                <button type="submit" id="add-btn" class="btn btn-primary w-100 py-3 mt-2 shadow">
+                                    <span class="material-icons align-middle me-1">save</span> Add Transaction
+                                </button>
+                            </form>
                         </div>
-                        <div class="form-group">
-                            <label>Amount (₹)</label>
-                            <input type="number" id="edit-tx-amount" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Owner</label>
-                            <select id="edit-tx-owner" required>
-                                <option value="Home">Home</option>
-                                <option value="Ujjwal">Ujjwal</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Details</label>
-                            <textarea id="edit-tx-details" rows="2" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Comment</label>
-                            <textarea id="edit-tx-comment" rows="2"></textarea>
-                        </div>
-                        <div class="flex-group" style="gap: 10px; margin-top: 20px;">
-                            <button type="submit" class="primary-btn" style="flex: 2;">Save Changes</button>
-                            <button type="button" id="delete-tx-btn" class="danger-btn" style="flex: 1;">Delete</button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
 
-            <!-- Generic Alert/Confirm Modal -->
-            <div id="alert-modal" class="modal">
-                <div class="modal-content modal-content-small">
-                    <p id="alert-message" style="margin-bottom: 24px; font-size: 1.1rem; font-weight: 500;"></p>
-                    <div id="alert-actions" class="flex-group" style="justify-content: center;">
-                        <button id="alert-ok-btn" class="primary-btn">OK</button>
-                        <button id="alert-cancel-btn" class="danger-btn" style="display: none;">Cancel</button>
+            <!-- Transactions View Modal (Bootstrap Native) -->
+            <div class="modal fade" id="transactions-modal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-0 pb-0 shadow-sm px-4 pt-4">
+                            <h3 class="modal-title fw-bold" id="transactions-title">Transactions</h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="row g-2 mb-4">
+                                <div class="col-md-3">
+                                    <select id="filter-owner" class="form-select shadow-sm">
+                                        <option value="All">All Owners</option>
+                                        <option value="Home">Home</option>
+                                        <option value="Ujjwal">Ujjwal</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select id="filter-month" class="form-select shadow-sm">
+                                        <option value="All">All Months</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 d-flex">
+                                    <button id="mark-paid-btn"
+                                        class="btn btn-success ms-auto d-flex align-items-center">
+                                        <span class="material-icons me-1">check_circle</span> Mark All as Paid
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Details</th>
+                                            <th>Amount</th>
+                                            <th>Owner</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactions-list"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Transaction Modal (Bootstrap Native) -->
+            <div class="modal fade" id="tx-edit-modal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold">Edit Transaction</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <form id="tx-edit-form">
+                                <div class="form-floating mb-3">
+                                    <input type="date" class="form-control" id="edit-tx-date" required>
+                                    <label>Date</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <select id="edit-tx-category" class="form-select" required></select>
+                                    <label>Category</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="edit-tx-amount" step="0.01" required>
+                                    <label>Amount (₹)</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <select id="edit-tx-owner" class="form-select" required>
+                                        <option value="Home">Home</option>
+                                        <option value="Ujjwal">Ujjwal</option>
+                                    </select>
+                                    <label>Owner</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <textarea id="edit-tx-details" class="form-control" style="height: 80px"
+                                        required></textarea>
+                                    <label>Details</label>
+                                </div>
+                                <div class="form-floating mb-4">
+                                    <textarea id="edit-tx-comment" class="form-control" style="height: 80px"></textarea>
+                                    <label>Comment</label>
+                                </div>
+                                <div class="d-flex gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary flex-grow-1 py-3">
+                                        <span class="material-icons align-middle me-1">save</span> Save Changes
+                                    </button>
+                                    <button type="button" id="delete-tx-btn" class="btn btn-outline-danger py-3 px-4">
+                                        <span class="material-icons align-middle">delete</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generic Alert/Confirm Modal (Bootstrap Native) -->
+            <div class="modal fade" id="alert-modal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content rounded-4 border-0 p-3">
+                        <div class="modal-body text-center p-4">
+                            <div class="mb-3 text-secondary">
+                                <span class="material-icons" style="font-size: 3rem;">info</span>
+                            </div>
+                            <p id="alert-message" class="fs-5 mb-4 fw-medium"></p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button id="alert-ok-btn" class="btn btn-primary px-4 py-2 rounded-pill"
+                                    data-bs-dismiss="modal">OK</button>
+                                <button id="alert-cancel-btn" class="btn btn-light px-4 py-2 rounded-pill"
+                                    style="display: none;" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script type="module" src="src/app.js"></script>
 </body>
 

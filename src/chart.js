@@ -7,10 +7,18 @@ const noDataMsg = document.getElementById("no-data-msg");
 const summaryTbody = document.getElementById("summary-tbody");
 const masterCb = document.getElementById("master-category-cb");
 
-const modal = document.getElementById("tx-details-modal");
-const closeBtn = document.getElementById("close-tx-modal");
 const modalTitle = document.getElementById("modal-title");
 const modalTbody = document.getElementById("modal-tbody");
+
+// Bootstrap Modal Instance
+let detailsModal;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const modalEl = document.getElementById('tx-details-modal');
+    if (modalEl) {
+        detailsModal = new bootstrap.Modal(modalEl);
+    }
+});
 
 const PALETTE = [
     "#3498db", "#e74c3c", "#2ecc71", "#f39c12",
@@ -63,9 +71,9 @@ subscribeToItems(async (items) => {
 });
 
 // ── Dropdown Filters ──────────────────────────────────────────────────────────
-[filterSource, filterMonth, filterOwner].forEach(el =>
-    el.addEventListener("change", renderChart)
-);
+[filterSource, filterMonth, filterOwner].forEach(el => {
+    el.addEventListener("change", renderChart);
+});
 
 if (masterCb) {
     masterCb.onchange = () => {
@@ -95,25 +103,20 @@ function showTransactionsModal(category) {
     modalTitle.textContent = `Transactions: ${category}`;
     modalTbody.innerHTML = filtered.map(tx => `
         <tr>
-            <td style="padding:12px; border:1px solid #eee;">${tx.date}</td>
-            <td style="padding:12px; border:1px solid #eee;">${tx.sourceId}</td>
-            <td style="padding:12px; border:1px solid #eee;">${tx.details}</td>
-            <td style="padding:12px; border:1px solid #eee;">₹${Number(tx.amount).toLocaleString()}</td>
-            <td style="padding:12px; border:1px solid #eee;">${tx.owners || ""}</td>
+            <td>${tx.date}</td>
+            <td class="fw-medium">${tx.sourceId}</td>
+            <td>${tx.details}</td>
+            <td class="text-end fw-bold">₹${Number(tx.amount).toLocaleString()}</td>
+            <td><span class="badge bg-light text-dark border">${tx.owners || ""}</span></td>
         </tr>
     `).join("");
 
     if (filtered.length === 0) {
-        modalTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#999;">No transactions found.</td></tr>';
+        modalTbody.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No transactions found.</td></tr>';
     }
 
-    modal.style.display = "block";
+    if (detailsModal) detailsModal.show();
 }
-
-closeBtn.onclick = () => modal.style.display = "none";
-window.onclick = (event) => {
-    if (event.target == modal) modal.style.display = "none";
-};
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderChart() {
@@ -203,22 +206,26 @@ function renderChart() {
         const isChecked = selectedCategories.has(cat);
         const color = getColor(cat);
         return `
-            <tr class="clickable-row ${isChecked ? '' : 'deselected-row'}" style="opacity: ${isChecked ? '1' : '0.5'}; border-bottom: 1px solid #eee;">
-                <td style="text-align: center; padding: 12px;"><input type="checkbox" class="cat-item-cb" data-cat="${cat}" ${isChecked ? 'checked' : ''}></td>
-                <td class="cat-label-cell" data-cat="${cat}" style="padding: 12px; cursor: pointer;">
-                    <span class="color-dot" style="background:${color}; width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>
+            <tr class="${isChecked ? '' : 'deselected-row'}">
+                <td class="text-center">
+                    <div class="form-check d-inline-block">
+                        <input class="form-check-input cat-item-cb" type="checkbox" data-cat="${cat}" ${isChecked ? 'checked' : ''}>
+                    </div>
+                </td>
+                <td class="cat-label-cell" data-cat="${cat}">
+                    <span class="color-dot" style="background:${color};"></span>
                     ${cat}
                 </td>
-                <td style="padding: 12px; text-align: right; font-weight: 500;">₹${val.toLocaleString()}</td>
-                <td style="padding: 12px; text-align: right; color: #666;">${pct}%</td>
+                <td class="text-end fw-medium text-dark">₹${val.toLocaleString()}</td>
+                <td class="text-end text-muted small">${pct}%</td>
             </tr>
         `;
     }).join("") + (categoriesInView.length > 0 ? `
-        <tr class="total-row" style="background: #f8f9fa; font-weight: bold;">
+        <tr class="table-light fw-bold text-dark border-top-2">
             <td></td>
-            <td style="padding: 12px;">Total Sum</td>
-            <td style="padding: 12px; text-align: right;">₹${grandTable.toLocaleString()}</td>
-            <td style="padding: 12px; text-align: right;">100%</td>
+            <td class="ps-4">Total Sum</td>
+            <td class="text-end">₹${grandTable.toLocaleString()}</td>
+            <td class="text-end">100%</td>
         </tr>
     ` : "");
 

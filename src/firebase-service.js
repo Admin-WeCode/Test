@@ -178,3 +178,21 @@ export async function markTransactionsAsPaid(sourceId, transactionIds) {
         throw e;
     }
 }
+
+/**
+ * Fetch all transactions across multiple sourceIds (one-shot, for analytics)
+ * @param {string[]} sourceIds - Array of source document IDs
+ * @returns {Promise<object[]>} - Flat array of transactions with sourceId attached
+ */
+export async function fetchAllTransactions(sourceIds) {
+    const results = [];
+    await Promise.all(sourceIds.map(async (sourceId) => {
+        const subColRef = collection(db, COLLECTION_NAME, sourceId, "transactions");
+        const snapshot = await getDocs(subColRef);
+        snapshot.forEach((doc) => {
+            results.push({ id: doc.id, sourceId, ...doc.data() });
+        });
+    }));
+    return results;
+}
+

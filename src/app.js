@@ -1,4 +1,4 @@
-import { subscribeToItems, addTransaction, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction } from "./firebase-service.js";
+import { subscribeToItems, addTransaction, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction } from "./firebase-service.js";
 
 const form = document.getElementById("add-form");
 const loadingIndicator = document.getElementById("loading");
@@ -29,6 +29,7 @@ const markPaidBtn = document.getElementById("mark-paid-btn");
 let txUnsubscribe = null;
 let currentTransactions = [];
 let currentSourceId = null;
+let ALL_SOURCE_IDS = []; // Track all source IDs for editing
 
 // Edit Transaction Form Selectors
 const txEditForm = document.getElementById("tx-edit-form");
@@ -36,6 +37,7 @@ const closeTxEditBtn = document.getElementById("close-tx-edit-btn");
 const deleteTxBtn = document.getElementById("delete-tx-btn");
 
 const editTxDate = document.getElementById("edit-tx-date");
+const editTxSource = document.getElementById("edit-tx-source");
 const editTxCategory = document.getElementById("edit-tx-category");
 const editTxAmount = document.getElementById("edit-tx-amount");
 const editTxOwner = document.getElementById("edit-tx-owner");
@@ -43,9 +45,17 @@ const editTxDetails = document.getElementById("edit-tx-details");
 const editTxComment = document.getElementById("edit-tx-comment");
 
 let editingTransactionId = null;
+let currentTxStatus = "pending";
 
 // Populate categories for edit modal
 document.getElementById("edit-tx-category").innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
+
+// Populate source dropdown for edit modal
+const populateEditSources = () => {
+    if (editTxSource && ALL_SOURCE_IDS.length > 0) {
+        editTxSource.innerHTML = ALL_SOURCE_IDS.map(id => `<option value="${id}">${id}</option>`).join("");
+    }
+};
 
 // Alert Modal Elements
 const alertMessage = document.getElementById("alert-message");
@@ -224,7 +234,6 @@ function renderTransactions() {
         row.style.cursor = "pointer";
         row.onclick = (e) => !e.target.closest("button") && openTxEditModal(tx);
 
-        const badgeClass = tx.status === "paid" ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning";
         const icon = tx.status === "paid" ? "check_circle" : "pending";
 
         row.innerHTML = `
@@ -250,12 +259,14 @@ function renderTransactions() {
 
 function openTxEditModal(tx) {
     editingTransactionId = tx.id;
-    editTxDate.value = tx.date;
-    editTxCategory.value = tx.category;
-    editTxAmount.value = tx.amount;
-    editTxOwner.value = tx.owners;
-    editTxDetails.value = tx.details;
-    editTxComment.value = tx.comment || "";
+    currentTxStatus = tx.status || "pending";
+    if (editTxDate) editTxDate.value = tx.date;
+    if (editTxSource) editTxSource.value = currentSourceId;
+    if (editTxCategory) editTxCategory.value = tx.category || "Other";
+    if (editTxAmount) editTxAmount.value = tx.amount;
+    if (editTxOwner) editTxOwner.value = tx.owners || "Home";
+    if (editTxDetails) editTxDetails.value = tx.details;
+    if (editTxComment) editTxComment.value = tx.comment || "";
     txEditModal.show();
 }
 
@@ -313,20 +324,29 @@ form.onsubmit = async (e) => {
 
 txEditForm.onsubmit = async (e) => {
     e.preventDefault();
+    const newSourceId = editTxSource.value;
     const updatedData = {
         date: editTxDate.value,
         category: editTxCategory.value,
         amount: Number(editTxAmount.value),
         owners: editTxOwner.value,
         details: editTxDetails.value,
-        comment: editTxComment.value
+        comment: editTxComment.value,
+        status: currentTxStatus
     };
     try {
-        await updateTransaction(currentSourceId, editingTransactionId, updatedData);
-        showNotification("Updated!");
-        txEditModal.hide();
+        if (newSourceId !== currentSourceId) {
+            await moveTransaction(currentSourceId, newSourceId, editingTransactionId, updatedData);
+            showNotification("Moved & Updated!");
+            txEditModal.hide();
+            txModal.hide(); // List is stale
+        } else {
+            await updateTransaction(currentSourceId, editingTransactionId, updatedData);
+            showNotification("Updated!");
+            txEditModal.hide();
+        }
     } catch (err) {
-        showNotification("Failed to update.");
+        showNotification("Failed to save changes.");
     }
 };
 
@@ -362,9 +382,11 @@ filterOwner.onchange = filterMonth.onchange = renderTransactions;
 
 subscribeToItems((items) => {
     if (loadingIndicator) loadingIndicator.style.display = "none";
+    ALL_SOURCE_IDS = items.map(i => i.id);
+    populateEditSources();
     updateSourceChart(items);
 
-    // Update dropdown
+    // Update main dropdown
     const currentSelection = inputName.value;
     inputName.innerHTML = `<option value="" disabled selected>Select Source...</option>` +
         items.map(i => `<option value="${i.id}">${i.id}</option>`).join("");

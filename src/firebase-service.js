@@ -185,6 +185,40 @@ export async function markTransactionsAsPaid(sourceId, transactionIds) {
 }
 
 /**
+ * Update a single transaction and recalculate source totals
+ */
+export async function updateTransaction(sourceId, transactionId, data) {
+    try {
+        const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
+        await updateDoc(txRef, data);
+
+        // Recalculate totals
+        const totals = await getSourceTotals(sourceId);
+        await updateItem(sourceId, totals);
+    } catch (e) {
+        console.error("Error updating transaction:", e);
+        throw e;
+    }
+}
+
+/**
+ * Delete a single transaction and recalculate source totals
+ */
+export async function deleteTransaction(sourceId, transactionId) {
+    try {
+        const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
+        await deleteDoc(txRef);
+
+        // Recalculate totals
+        const totals = await getSourceTotals(sourceId);
+        await updateItem(sourceId, totals);
+    } catch (e) {
+        console.error("Error deleting transaction:", e);
+        throw e;
+    }
+}
+
+/**
  * Fetch all transactions across multiple sourceIds (one-shot, for analytics)
  * @param {string[]} sourceIds - Array of source document IDs
  * @returns {Promise<object[]>} - Flat array of transactions with sourceId attached

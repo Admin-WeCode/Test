@@ -1,4 +1,4 @@
-import { subscribeToItems, deleteItem, updateItem, addTransaction, subscribeToTransactions, updateTransactionStatus, markTransactionsAsPaid } from "./firebase-service.js";
+import { subscribeToItems, deleteItem, updateItem, addTransaction, subscribeToTransactions, updateTransactionStatus, markTransactionsAsPaid, updateTransaction, deleteTransaction } from "./firebase-service.js";
 
 const form = document.getElementById("add-form");
 const listContainer = document.getElementById("items-list");
@@ -49,6 +49,27 @@ const addTxFromModalBtn = document.getElementById("add-tx-from-modal-btn");
 let txUnsubscribe = null;
 let currentTransactions = []; // Store fetched transactions for filtering
 let currentSourceId = null; // Store current source ID for updates
+
+// Edit Transaction Modal Elements
+const txEditModal = document.getElementById("tx-edit-modal");
+const txEditForm = document.getElementById("tx-edit-form");
+const closeTxEditBtn = document.getElementById("close-tx-edit-btn");
+const deleteTxBtn = document.getElementById("delete-tx-btn");
+
+const editTxDate = document.getElementById("edit-tx-date");
+const editTxCategory = document.getElementById("edit-tx-category");
+const editTxAmount = document.getElementById("edit-tx-amount");
+const editTxOwner = document.getElementById("edit-tx-owner");
+const editTxDetails = document.getElementById("edit-tx-details");
+const editTxComment = document.getElementById("edit-tx-comment");
+
+let editingTransactionId = null;
+
+// Populate categories for edit modal
+const populateEditCategories = () => {
+    editTxCategory.innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
+};
+populateEditCategories();
 
 // Alert Modal Elements
 const alertModal = document.getElementById("alert-modal");
@@ -124,8 +145,14 @@ window.onclick = (event) => {
         txModal.style.display = "none";
         if (txUnsubscribe) txUnsubscribe();
     }
-    // Don't close alert modal on outside click to force choice
+    if (event.target == txEditModal) {
+        txEditModal.style.display = "none";
+    }
 }
+
+closeTxEditBtn.onclick = () => {
+    txEditModal.style.display = "none";
+};
 
 // Filter Event Listeners
 filterOwner.addEventListener("change", renderTransactions);
@@ -378,7 +405,14 @@ function renderTransactions() {
 
     filtered.forEach(tx => {
         const row = document.createElement("tr");
+        row.className = "tx-row";
         row.style.borderBottom = "1px solid #eee";
+
+        row.onclick = (e) => {
+            // Don't open if they clicked the Mark Paid button
+            if (e.target.closest("button")) return;
+            openTxEditModal(tx);
+        };
 
         let actionsHtml = "";
         if (tx.status === "pending") {
@@ -414,3 +448,49 @@ function renderTransactions() {
         txListContainer.appendChild(row);
     });
 }
+
+function openTxEditModal(tx) {
+    editingTransactionId = tx.id;
+    editTxDate.value = tx.date;
+    editTxCategory.value = tx.category;
+    editTxAmount.value = tx.amount;
+    editTxOwner.value = tx.owners;
+    editTxDetails.value = tx.details;
+    editTxComment.value = tx.comment || "";
+
+    txEditModal.style.display = "block";
+}
+
+txEditForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const updatedData = {
+        date: editTxDate.value,
+        category: editTxCategory.value,
+        amount: Number(editTxAmount.value),
+        owners: editTxOwner.value,
+        details: editTxDetails.value,
+        comment: editTxComment.value
+    };
+
+    try {
+        await updateTransaction(currentSourceId, editingTransactionId, updatedData);
+        showNotification("Transaction updated successfully!");
+        txEditModal.style.display = "none";
+    } catch (err) {
+        console.error(err);
+        showNotification("Update failed.");
+    }
+};
+
+deleteTxBtn.onclick = () => {
+    showNotification("Delete this transaction forever?", true, async () => {
+        try {
+            await deleteTransaction(currentSourceId, editingTransactionId);
+            showNotification("Transaction deleted.");
+            txEditModal.style.display = "none";
+        } catch (err) {
+            console.error(err);
+            showNotification("Delete failed.");
+        }
+    });
+};

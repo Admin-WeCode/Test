@@ -28,6 +28,7 @@ const txTitle = document.getElementById("transactions-title");
 const filterOwner = document.getElementById("filter-owner");
 const filterMonth = document.getElementById("filter-month");
 const markPaidBtn = document.getElementById("mark-paid-btn");
+const addTxFromModalBtn = document.getElementById("add-tx-from-modal-btn");
 let txUnsubscribe = null;
 let currentTransactions = []; // Store fetched transactions for filtering
 let currentSourceId = null; // Store current source ID for updates
@@ -71,7 +72,10 @@ openModalBtn.onclick = () => {
         inputDate.valueAsDate = new Date();
     }
 };
-closeModalBtn.onclick = () => modal.style.display = "none";
+closeModalBtn.onclick = () => {
+    modal.style.display = "none";
+    modal.style.zIndex = "";
+};
 
 // Close Tx Modal
 closeTxModalBtn.onclick = () => {
@@ -79,9 +83,25 @@ closeTxModalBtn.onclick = () => {
     if (txUnsubscribe) txUnsubscribe();
 };
 
+// Add Transaction from within Transactions Modal
+addTxFromModalBtn.onclick = () => {
+    // Pre-select the current source in the dropdown
+    if (currentSourceId) {
+        inputName.value = currentSourceId;
+    }
+    // Set default date to today
+    if (!inputDate.value) {
+        inputDate.valueAsDate = new Date();
+    }
+    // Open on top of the transactions modal
+    modal.style.zIndex = "1500";
+    modal.style.display = "block";
+};
+
 window.onclick = (event) => {
     if (event.target == modal) {
         modal.style.display = "none";
+        modal.style.zIndex = "";
     }
     if (event.target == txModal) {
         txModal.style.display = "none";

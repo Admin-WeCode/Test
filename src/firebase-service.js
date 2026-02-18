@@ -11,7 +11,10 @@ import {
     onSnapshot,
     query,
     where,
-    writeBatch
+    writeBatch,
+    increment,
+    runTransaction,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -27,17 +30,29 @@ const COLLECTION_NAME = "expenseCollection";
  */
 export async function addTransaction(sourceId, transactionData) {
     try {
+        const batch = writeBatch(db);
         const subColRef = collection(db, COLLECTION_NAME, sourceId, "transactions");
-        const docRef = await addDoc(subColRef, transactionData);
+        const docRef = doc(subColRef); // Generate ID client-side for batch
 
-        const totals = await getSourceTotals(sourceId);
-        await updateItem(sourceId, totals);
+        batch.set(docRef, transactionData);
 
-        console.log("Transaction added with ID: ", docRef.id);
-        console.log(transactionData);
+        // Atomic increments for parent document
+        const parentRef = doc(db, COLLECTION_NAME, sourceId);
+        const amt = Number(transactionData.amount) || 0;
+        const updates = {
+            totalOutstanding: increment(amt)
+        };
+        if (transactionData.status === "pending") {
+            updates.outstanding = increment(amt);
+        }
+        batch.update(parentRef, updates);
+
+        await batch.commit();
+
+        console.log("Transaction added atomically with ID: ", docRef.id);
         return docRef;
     } catch (e) {
-        console.error("Error adding transaction: ", e);
+        console.error("Error adding transaction atomically: ", e);
         throw e;
     }
 }
@@ -145,16 +160,32 @@ export async function getSourceTotals(sourceId) {
  */
 export async function updateTransactionStatus(sourceId, transactionId, status) {
     try {
-        const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
-        await updateDoc(txRef, { status: status });
+        await runTransaction(db, async (transaction) => {
+            const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
+            const parentRef = doc(db, COLLECTION_NAME, sourceId);
 
-        // Recalculate totals
-        const totals = await getSourceTotals(sourceId);
-        await updateItem(sourceId, totals);
+            const txDoc = await transaction.get(txRef);
+            if (!txDoc.exists()) throw "Transaction does not exist!";
 
-        console.log(`Transaction ${transactionId} status updated to ${status}`);
+            const oldStatus = txDoc.data().status;
+            const amt = Number(txDoc.data().amount) || 0;
+
+            if (oldStatus === status) return; // No change
+
+            // Update status
+            transaction.update(txRef, { status: status });
+
+            // Update parent totals based on delta
+            if (oldStatus === "pending" && status === "paid") {
+                transaction.update(parentRef, { outstanding: increment(-amt) });
+            } else if (oldStatus === "paid" && status === "pending") {
+                transaction.update(parentRef, { outstanding: increment(amt) });
+            }
+        });
+
+        console.log(`Transaction ${transactionId} status updated atomically to ${status}`);
     } catch (e) {
-        console.error("Error updating transaction status:", e);
+        console.error("Error updating transaction status atomically:", e);
         throw e;
     }
 }
@@ -164,20 +195,30 @@ export async function updateTransactionStatus(sourceId, transactionId, status) {
  */
 export async function markTransactionsAsPaid(sourceId, transactionIds) {
     try {
+        const totalPendingRef = collection(db, COLLECTION_NAME, sourceId, "transactions");
         const batch = writeBatch(db);
-        if (transactionIds.length === 0) return;
+        const parentRef = doc(db, COLLECTION_NAME, sourceId);
 
-        transactionIds.forEach(id => {
-            const docRef = doc(db, COLLECTION_NAME, sourceId, "transactions", id);
-            batch.update(docRef, { status: "paid" });
-        });
-        await batch.commit();
+        let sumPaid = 0;
 
-        // Recalculate totals
-        const totals = await getSourceTotals(sourceId);
-        await updateItem(sourceId, totals);
+        // Note: This still requires a fetch to get the amounts, 
+        // but we only fetch the ones we are marking paid.
+        for (const id of transactionIds) {
+            const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", id);
+            const txDoc = await getDoc(txRef);
+            if (txDoc.exists() && txDoc.data().status === "pending") {
+                const amt = Number(txDoc.data().amount) || 0;
+                sumPaid += amt;
+                batch.update(txRef, { status: "paid" });
+            }
+        }
 
-        console.log(`Marked ${transactionIds.length} transactions as paid.`);
+        if (sumPaid > 0) {
+            batch.update(parentRef, { outstanding: increment(-sumPaid) });
+            await batch.commit();
+        }
+
+        console.log(`Marked ${transactionIds.length} transactions as paid and decremented outstanding by ${sumPaid}`);
     } catch (e) {
         console.error("Error batch updating transactions:", e);
         throw e;
@@ -189,14 +230,46 @@ export async function markTransactionsAsPaid(sourceId, transactionIds) {
  */
 export async function updateTransaction(sourceId, transactionId, data) {
     try {
-        const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
-        await updateDoc(txRef, data);
+        await runTransaction(db, async (transaction) => {
+            const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
+            const parentRef = doc(db, COLLECTION_NAME, sourceId);
 
-        // Recalculate totals
-        const totals = await getSourceTotals(sourceId);
-        await updateItem(sourceId, totals);
+            const txDoc = await transaction.get(txRef);
+            if (!txDoc.exists()) throw "Transaction does not exist!";
+
+            const oldData = txDoc.data();
+            const oldAmt = Number(oldData.amount) || 0;
+            const newAmt = Number(data.amount) || 0;
+
+            const oldStatus = oldData.status;
+            const newStatus = data.status || oldData.status;
+
+            // Update transaction
+            transaction.update(txRef, data);
+
+            // Calculate deltas
+            const totalDelta = newAmt - oldAmt;
+            let outstandingDelta = 0;
+
+            // Simple delta calculation logic
+            if (oldStatus === "pending" && newStatus === "pending") {
+                outstandingDelta = newAmt - oldAmt;
+            } else if (oldStatus === "pending" && newStatus === "paid") {
+                outstandingDelta = -oldAmt;
+            } else if (oldStatus === "paid" && newStatus === "pending") {
+                outstandingDelta = newAmt;
+            }
+
+            const parentUpdates = {};
+            if (totalDelta !== 0) parentUpdates.totalOutstanding = increment(totalDelta);
+            if (outstandingDelta !== 0) parentUpdates.outstanding = increment(outstandingDelta);
+
+            if (Object.keys(parentUpdates).length > 0) {
+                transaction.update(parentRef, parentUpdates);
+            }
+        });
     } catch (e) {
-        console.error("Error updating transaction:", e);
+        console.error("Error updating transaction atomically:", e);
         throw e;
     }
 }
@@ -206,14 +279,29 @@ export async function updateTransaction(sourceId, transactionId, data) {
  */
 export async function deleteTransaction(sourceId, transactionId) {
     try {
-        const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
-        await deleteDoc(txRef);
+        await runTransaction(db, async (transaction) => {
+            const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
+            const parentRef = doc(db, COLLECTION_NAME, sourceId);
 
-        // Recalculate totals
-        const totals = await getSourceTotals(sourceId);
-        await updateItem(sourceId, totals);
+            const txDoc = await transaction.get(txRef);
+            if (!txDoc.exists()) return; // Already deleted
+
+            const data = txDoc.data();
+            const amt = Number(data.amount) || 0;
+            const status = data.status;
+
+            transaction.delete(txRef);
+
+            const parentUpdates = {
+                totalOutstanding: increment(-amt)
+            };
+            if (status === "pending") {
+                parentUpdates.outstanding = increment(-amt);
+            }
+            transaction.update(parentRef, parentUpdates);
+        });
     } catch (e) {
-        console.error("Error deleting transaction:", e);
+        console.error("Error deleting transaction atomically:", e);
         throw e;
     }
 }

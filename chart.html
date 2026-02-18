@@ -127,6 +127,76 @@
                 </div>
             </div>
         </div>
+
+        <!-- Transaction Edit Modal (Bootstrap Native) -->
+        <div class="modal fade" id="tx-edit-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header border-0 pb-0 px-4 pt-4">
+                        <h5 class="modal-title fw-bold">Edit Transaction</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="tx-edit-form">
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control" id="edit-tx-date" required>
+                                <label>Date</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <select id="edit-tx-category" class="form-select" required></select>
+                                <label>Category</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="number" class="form-control" id="edit-tx-amount" step="0.01" required>
+                                <label>Amount (₹)</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <select id="edit-tx-owner" class="form-select" required>
+                                    <option value="Home">Home</option>
+                                    <option value="Ujjwal">Ujjwal</option>
+                                </select>
+                                <label>Owner</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <textarea id="edit-tx-details" class="form-control" style="height: 80px" required
+                                    placeholder="Details"></textarea>
+                                <label>Details</label>
+                            </div>
+                            <div class="form-floating mb-4">
+                                <textarea id="edit-tx-comment" class="form-control" style="height: 80px"
+                                    placeholder="Comment"></textarea>
+                                <label>Comment</label>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1 py-3 shadow">
+                                    <span class="material-icons align-middle me-1">save</span> Save Changes
+                                </button>
+                                <button type="button" id="delete-tx-btn" class="btn btn-outline-danger px-4">
+                                    <span class="material-icons align-middle">delete</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Modal (Bootstrap Native) -->
+        <div class="modal fade" id="alert-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content border-0 shadow-lg rounded-4 text-center p-3">
+                    <div class="modal-body p-4">
+                        <span class="material-icons text-secondary mb-3" style="font-size: 3rem;">help_outline</span>
+                        <p id="alert-message" class="fs-5 fw-medium mb-4"></p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button id="alert-ok-btn" class="btn btn-primary px-4 rounded-pill shadow-sm">OK</button>
+                            <button id="alert-cancel-btn" class="btn btn-outline-secondary px-4 rounded-pill"
+                                style="display: none;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Bootstrap 5 JS Bundle -->

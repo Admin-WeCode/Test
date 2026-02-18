@@ -1,4 +1,4 @@
-import { subscribeToItems, fetchAllTransactions } from "./firebase-service.js";
+import { subscribeToItems, fetchAllTransactions, updateTransaction, deleteTransaction } from "./firebase-service.js";
 
 // DOM Selectors with safety checks
 const filterSource = document.getElementById("chart-filter-source");
@@ -7,24 +7,45 @@ const filterOwner = document.getElementById("chart-filter-owner");
 const noDataMsg = document.getElementById("no-data-msg");
 const summaryTbody = document.getElementById("summary-tbody");
 const masterCb = document.getElementById("master-category-cb");
+
 const modalTitle = document.getElementById("modal-title");
 const modalTbody = document.getElementById("modal-tbody");
 
-// Bootstrap Modal Instance
-let detailsModal;
+// Bootstrap Modal Instances
+let detailsModal, txEditModal, alertModal;
 
 document.addEventListener('DOMContentLoaded', () => {
-    const modalEl = document.getElementById('tx-details-modal');
-    if (modalEl && typeof bootstrap !== 'undefined') {
-        detailsModal = new bootstrap.Modal(modalEl);
-    }
+    const detailsModalEl = document.getElementById('tx-details-modal');
+    const txEditModalEl = document.getElementById('tx-edit-modal');
+    const alertModalEl = document.getElementById('alert-modal');
+
+    if (detailsModalEl) detailsModal = new bootstrap.Modal(detailsModalEl);
+    if (txEditModalEl) txEditModal = new bootstrap.Modal(txEditModalEl);
+    if (alertModalEl) alertModal = new bootstrap.Modal(alertModalEl);
 });
+
+// Edit Modal Selectors
+const txEditForm = document.getElementById("tx-edit-form");
+const deleteTxBtn = document.getElementById("delete-tx-btn");
+const editTxDate = document.getElementById("edit-tx-date");
+const editTxCategory = document.getElementById("edit-tx-category");
+const editTxAmount = document.getElementById("edit-tx-amount");
+const editTxOwner = document.getElementById("edit-tx-owner");
+const editTxDetails = document.getElementById("edit-tx-details");
+const editTxComment = document.getElementById("edit-tx-comment");
+
+// Alert Modal Selectors
+const alertMessage = document.getElementById("alert-message");
+const alertOkBtn = document.getElementById("alert-ok-btn");
+const alertCancelBtn = document.getElementById("alert-cancel-btn");
 
 const PALETTE = [
     "#3498db", "#e74c3c", "#2ecc71", "#f39c12",
     "#9b59b6", "#1abc9c", "#e67e22", "#e91e63",
     "#00bcd4", "#8bc34a", "#607d8b", "#ff5722"
 ];
+
+const CATEGORIES = ["Grocery", "Pets", "Fuel", "Dining", "LIC/OICL", "Travel", "Entertainment", "Utility Bills", "Rent", "Other"];
 
 const categoryColorMap = {};
 let colorIndex = 0;
@@ -40,8 +61,39 @@ let chartInstance = null;
 let sourceIds = [];
 let allCategories = [];
 let selectedCategories = new Set();
+let editingTransactionId = null;
+let currentSourceId = null;
+
+// Populate categories for edit modal
+const populateEditCategories = () => {
+    if (editTxCategory) {
+        editTxCategory.innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
+    }
+};
+populateEditCategories();
+
+function showNotification(message, isConfirmation = false, onConfirmCallback = null) {
+    if (!alertMessage || !alertModal) return;
+    alertMessage.textContent = message;
+    alertOkBtn.onclick = () => {
+        alertModal.hide();
+        if (isConfirmation && onConfirmCallback) onConfirmCallback();
+    };
+    if (isConfirmation) {
+        alertCancelBtn.style.display = "inline-block";
+        alertCancelBtn.onclick = () => alertModal.hide();
+    } else {
+        alertCancelBtn.style.display = "none";
+    }
+    alertModal.show();
+}
 
 // ── Bootstrap/Firestore ────────────────────────────────────────────────────────
+async function refreshData() {
+    allTransactions = await fetchAllTransactions(sourceIds);
+    renderChart();
+}
+
 subscribeToItems(async (items) => {
     try {
         sourceIds = items.map(i => i.id);
@@ -121,15 +173,20 @@ function showTransactionsModal(category) {
 
     if (modalTitle) modalTitle.textContent = `Transactions: ${category}`;
     if (modalTbody) {
-        modalTbody.innerHTML = filtered.map(tx => `
-            <tr>
+        modalTbody.innerHTML = "";
+        filtered.forEach(tx => {
+            const tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+            tr.onclick = () => openTxEditModal(tx);
+            tr.innerHTML = `
                 <td>${tx.date}</td>
                 <td class="fw-medium">${tx.sourceId}</td>
                 <td>${tx.details}</td>
                 <td class="text-end fw-bold">₹${Number(tx.amount).toLocaleString()}</td>
                 <td><span class="badge bg-light text-dark border">${tx.owners || ""}</span></td>
-            </tr>
-        `).join("");
+            `;
+            modalTbody.appendChild(tr);
+        });
 
         if (filtered.length === 0) {
             modalTbody.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No transactions found.</td></tr>';
@@ -137,6 +194,54 @@ function showTransactionsModal(category) {
     }
 
     if (detailsModal) detailsModal.show();
+}
+
+function openTxEditModal(tx) {
+    editingTransactionId = tx.id;
+    currentSourceId = tx.sourceId;
+    if (editTxDate) editTxDate.value = tx.date;
+    if (editTxCategory) editTxCategory.value = tx.category || "Other";
+    if (editTxAmount) editTxAmount.value = tx.amount;
+    if (editTxOwner) editTxOwner.value = tx.owners || "Home";
+    if (editTxDetails) editTxDetails.value = tx.details;
+    if (editTxComment) editTxComment.value = tx.comment || "";
+    if (txEditModal) txEditModal.show();
+}
+
+if (txEditForm) {
+    txEditForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const updatedData = {
+            date: editTxDate.value,
+            category: editTxCategory.value,
+            amount: Number(editTxAmount.value),
+            owners: editTxOwner.value,
+            details: editTxDetails.value,
+            comment: editTxComment.value
+        };
+        try {
+            await updateTransaction(currentSourceId, editingTransactionId, updatedData);
+            showNotification("Updated!");
+            txEditModal.hide();
+            refreshData();
+        } catch (err) {
+            showNotification("Failed to update.");
+        }
+    };
+}
+
+if (deleteTxBtn) {
+    deleteTxBtn.onclick = () => showNotification("Delete transaction forever?", true, async () => {
+        try {
+            await deleteTransaction(currentSourceId, editingTransactionId);
+            showNotification("Deleted!");
+            txEditModal.hide();
+            detailsModal.hide(); // Hide the list modal too as it might be stale
+            refreshData();
+        } catch (err) {
+            showNotification("Failed to delete.");
+        }
+    });
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -174,17 +279,21 @@ function renderChart() {
     const canvas = document.getElementById("category-chart");
 
     if (chartLabels.length === 0) {
-        noDataMsg.textContent = selectedCategories.size === 0 ? "No categories selected." : "No data for filters.";
-        noDataMsg.classList.remove("d-none");
-        noDataMsg.classList.add("d-flex");
+        if (noDataMsg) {
+            noDataMsg.textContent = selectedCategories.size === 0 ? "No categories selected." : "No data for filters.";
+            noDataMsg.classList.remove("d-none");
+            noDataMsg.classList.add("d-flex");
+        }
         if (canvas) {
             canvas.classList.add("d-none");
             canvas.classList.remove("d-block");
         }
         if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     } else {
-        noDataMsg.classList.add("d-none");
-        noDataMsg.classList.remove("d-flex");
+        if (noDataMsg) {
+            noDataMsg.classList.add("d-none");
+            noDataMsg.classList.remove("d-flex");
+        }
         if (canvas) {
             canvas.classList.remove("d-none");
             canvas.classList.add("d-block");

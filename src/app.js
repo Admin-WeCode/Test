@@ -365,7 +365,7 @@ function renderTransactions() {
     txListContainer.innerHTML = "";
 
     if (filtered.length === 0) {
-        txListContainer.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px; color: #999;">No transactions found.</td></tr>';
+        txListContainer.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:15px; color: #999;">No transactions found.</td></tr>';
         markPaidBtn.disabled = true;
         markPaidBtn.style.opacity = "0.5";
         markPaidBtn.style.cursor = "not-allowed";
@@ -391,9 +391,7 @@ function renderTransactions() {
             <td style="padding: 10px;">${tx.date}</td>
             <td style="padding: 10px;">${tx.details}</td>
             <td style="padding: 10px;">${tx.amount}</td>
-            <td style="padding: 10px; text-transform: capitalize;">${tx.status}</td>
             <td style="padding: 10px;">${tx.owners || ""}</td>
-            <td style="padding: 10px; font-size: 0.9em; color: #666;">${tx.comment || ""}</td>
              <td style="padding: 10px;">${actionsHtml}</td>
         `;
 

@@ -155,9 +155,13 @@ function renderChart() {
     });
 
     const labels = Object.keys(totals);
-    const data = Object.values(totals);
-    const grand = data.reduce((a, b) => a + b, 0);
+    const actualData = Object.values(totals);
+    const grand = actualData.reduce((a, b) => a + b, 0);
     const colors = labels.map(l => getColor(l));
+
+    // Calculate visual data with a minimum weight (e.g. 3% of total) for visibility
+    const minVisualValue = grand * 0.03;
+    const visualData = actualData.map(val => Math.max(val, minVisualValue));
 
     const canvas = document.getElementById("category-chart");
 
@@ -182,7 +186,7 @@ function renderChart() {
         data: {
             labels,
             datasets: [{
-                data,
+                data: visualData,
                 backgroundColor: colors,
                 borderWidth: 2,
                 borderColor: "#fff"
@@ -203,7 +207,8 @@ function renderChart() {
                 tooltip: {
                     callbacks: {
                         label: (ctx) => {
-                            const val = ctx.parsed;
+                            const index = ctx.dataIndex;
+                            const val = actualData[index];
                             const pct = grand > 0 ? ((val / grand) * 100).toFixed(1) : 0;
                             return ` ₹${val.toLocaleString()} (${pct}%)`;
                         }
@@ -215,7 +220,7 @@ function renderChart() {
 
     // Summary table — sorted by amount desc
     const sorted = labels
-        .map((l, i) => ({ label: l, value: data[i], color: colors[i] }))
+        .map((l, i) => ({ label: l, value: actualData[i], color: colors[i] }))
         .sort((a, b) => b.value - a.value);
 
     summaryTbody.innerHTML = sorted.map(row => {

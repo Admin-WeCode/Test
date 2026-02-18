@@ -79,7 +79,17 @@ function updateSourceChart(items) {
     const filteredItems = items.filter(item => (item.totalOutstanding || 0) > 0);
     const labels = filteredItems.map(item => item.id);
     const actualData = filteredItems.map(item => item.totalOutstanding || 0);
+
+    // Calculate Grand Totals for Summary Cards
     const totalSum = actualData.reduce((a, b) => a + b, 0);
+    const totalOutstandingSum = items.reduce((a, b) => a + (b.outstanding || 0), 0);
+
+    // Update Summary Cards in DOM
+    const outstandingEl = document.getElementById("total-outstanding-val");
+    const totalOutEl = document.getElementById("total-out-val");
+    if (outstandingEl) outstandingEl.innerText = `₹${totalOutstandingSum.toLocaleString()}`;
+    if (totalOutEl) totalOutEl.innerText = `₹${totalSum.toLocaleString()}`;
+
     const minVisualValue = totalSum * 0.03;
     const visualData = actualData.map(val => Math.max(val, minVisualValue));
 
@@ -116,7 +126,7 @@ function updateSourceChart(items) {
                 },
                 plugins: {
                     legend: {
-                        position: 'right',
+                        position: 'bottom',
                         align: 'center',
                         labels: { padding: 20, usePointStyle: true, font: { size: 12 } }
                     },

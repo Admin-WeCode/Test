@@ -77,11 +77,33 @@
                     Analytics</a>
             </section>
 
-            <div class="chart-container"
-                style="position: relative; max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <a href="sources.html" title="View Detailed Table"
-                    style="position: absolute; top: 15px; right: 20px; text-decoration: none; font-size: 1.2rem; filter: grayscale(1); opacity: 0.6; transition: 0.3s;">👁️</a>
-                <canvas id="sourceChart"></canvas>
+            <div class="dashboard-flex"
+                style="display: flex; gap: 20px; max-width: 900px; margin: 20px auto; align-items: stretch;">
+                <!-- Chart Section -->
+                <div class="chart-container"
+                    style="flex: 70; position: relative; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <a href="sources.html" title="View Detailed Table"
+                        style="position: absolute; top: 15px; right: 20px; text-decoration: none; font-size: 1.2rem; filter: grayscale(1); opacity: 0.6; transition: 0.3s; z-index: 10;">👁️</a>
+                    <canvas id="sourceChart"></canvas>
+                </div>
+
+                <!-- Summary Cards Section -->
+                <div class="summary-section" style="flex: 30; display: flex; flex-direction: column; gap: 15px;">
+                    <div class="card"
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <span
+                            style="font-size: 0.85rem; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Outstanding</span>
+                        <span id="total-outstanding-val"
+                            style="font-size: 1.6rem; font-weight: 700; color: #e67e22;">₹0</span>
+                    </div>
+                    <div class="card"
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <span
+                            style="font-size: 0.85rem; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Total
+                            Out.</span>
+                        <span id="total-out-val" style="font-size: 1.6rem; font-weight: 700; color: #3498db;">₹0</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Modal Structure -->

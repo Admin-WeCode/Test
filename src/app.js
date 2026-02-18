@@ -88,8 +88,12 @@ function updateSourceChart(items) {
     const filteredItems = items.filter(item => (item.totalOutstanding || 0) > 0);
 
     const labels = filteredItems.map(item => item.id);
-    const totalOutData = filteredItems.map(item => item.totalOutstanding || 0);
-    const outstandingData = filteredItems.map(item => item.outstanding || 0);
+    const actualData = filteredItems.map(item => item.totalOutstanding || 0);
+
+    // Calculate visual data with a minimum weight (e.g. 3% of total) for visibility
+    const totalSum = actualData.reduce((a, b) => a + b, 0);
+    const minVisualValue = totalSum * 0.03;
+    const visualData = actualData.map(val => Math.max(val, minVisualValue));
 
     const colors = [
         '#3498db', '#e67e22', '#2ecc71', '#9b59b6', '#f1c40f',
@@ -98,7 +102,7 @@ function updateSourceChart(items) {
 
     if (sourceChart) {
         sourceChart.data.labels = labels;
-        sourceChart.data.datasets[0].data = totalOutData;
+        sourceChart.data.datasets[0].data = visualData;
         sourceChart.data.datasets[0].backgroundColor = colors.slice(0, labels.length);
         // Store current items in chart instance for tooltip reference
         sourceChart.options.plugins.tooltip.externalData = filteredItems;
@@ -109,7 +113,7 @@ function updateSourceChart(items) {
             data: {
                 labels: labels,
                 datasets: [{
-                    data: totalOutData,
+                    data: visualData,
                     backgroundColor: colors.slice(0, labels.length),
                     hoverOffset: 15,
                     borderWidth: 2,

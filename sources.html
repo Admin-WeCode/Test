@@ -52,6 +52,32 @@
             font-size: 0.9rem;
         }
 
+        .analytics-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .back-btn {
+            background: none;
+            border: 1px solid #3498db;
+            color: #3498db;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
         .tx-row:hover {
             background-color: #f9f9f9;
             cursor: pointer;
@@ -63,15 +89,11 @@
 
 <body>
     <div class="container">
-        <header style="margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #eee;">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div>
-                    <h1 style="margin: 0; color: #3498db; font-size: 2rem;">Expense Sources</h1>
-                    <p style="margin: 5px 0 0; color: #7f8c8d; font-size: 1rem;">Manage your spending sources</p>
-                </div>
-                <a href="index.html" class="primary-btn"
-                    style="text-decoration: none; background: #95a5a6; display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; transition: background 0.3s;">🏠
-                    Home</a>
+        <header class="analytics-header">
+            <a href="index.html" class="back-btn">← Home</a>
+            <div>
+                <h1 style="margin:0; color: #3498db;">Expense Sources</h1>
+                <p style="margin:0; color:#666; font-size:0.9rem;">Manage your spending sources</p>
             </div>
         </header>
 
@@ -179,7 +201,6 @@
                             <th>Expense Name</th>
                             <th>Outstanding</th>
                             <th>Total Out.</th>
-                            <th style="padding: 12px; text-align: left; width: 120px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="items-list">

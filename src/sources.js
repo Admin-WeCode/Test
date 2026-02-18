@@ -63,6 +63,15 @@ function showNotification(message, isConfirmation = false, onConfirmCallback = n
 subscribeToItems((items) => {
     loadingIndicator.style.display = "none";
     renderItems(items);
+
+    // Deep Linking: Check for source parameter and auto-open modal
+    const urlParams = new URLSearchParams(window.location.search);
+    const sourceParam = urlParams.get('source');
+    if (sourceParam && items.some(item => item.id === sourceParam)) {
+        openTransactionsModal(sourceParam);
+        // Clean up URL without reloading
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 });
 
 function renderItems(items) {
@@ -74,17 +83,13 @@ function renderItems(items) {
 
     items.forEach(item => {
         const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.onclick = () => openTransactionsModal(item.id);
         tr.innerHTML = `
             <td><strong>${item.id}</strong></td>
             <td>₹${(item.outstanding || 0).toLocaleString()}</td>
             <td>₹${(item.totalOutstanding || 0).toLocaleString()}</td>
-            <td>
-                 <div class="item-actions">
-                    <button class="view-btn" style="background-color: #3498db; padding: 5px 10px; font-size: 0.8rem; color: white; border: none; border-radius: 4px; cursor: pointer;">View</button>
-                </div>
-            </td>
         `;
-        tr.querySelector(".view-btn").addEventListener("click", () => openTransactionsModal(item.id));
         listContainer.appendChild(tr);
     });
 }

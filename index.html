@@ -78,7 +78,9 @@
             </section>
 
             <div class="chart-container"
-                style="max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                style="position: relative; max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <a href="sources.html" title="View Detailed Table"
+                    style="position: absolute; top: 15px; right: 20px; text-decoration: none; font-size: 1.2rem; filter: grayscale(1); opacity: 0.6; transition: 0.3s;">👁️</a>
                 <canvas id="sourceChart"></canvas>
             </div>
 
@@ -135,93 +137,7 @@
                     </form>
                 </div>
             </div>
-            <!-- Transactions View Modal -->
-            <div id="transactions-modal" class="modal">
-                <div class="modal-content" style="max-width: 800px; width: 90%;">
-                    <span class="close-transactions-btn"
-                        style="float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-                    <h2 id="transactions-title">Transactions</h2>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <select id="filter-owner" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
-                            <option value="All">All Owners</option>
-                            <option value="Home">Home</option>
-                            <option value="Ujjwal">Ujjwal</option>
-                        </select>
-                        <select id="filter-month" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
-                            <option value="All">All Months</option>
-                            <!-- Populated dynamically -->
-                        </select>
-                        <button id="add-tx-from-modal-btn"
-                            style="margin-left: auto; padding: 5px 10px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">+
-                            Add</button>
-                        <button id="mark-paid-btn"
-                            style="padding: 5px 10px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">Mark
-                            All as Paid</button>
-                    </div>
-
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
-                            <thead>
-                                <tr style="background-color: #f2f2f2;">
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Date</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Details</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Amount</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Owner</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactions-list">
-                                <!-- Transactions injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Transaction Edit Modal (On top of Transactions list) -->
-            <div id="tx-edit-modal">
-                <div class="modal-content">
-                    <span class="close-btn" id="close-tx-edit-btn">&times;</span>
-                    <h3>Edit Transaction</h3>
-                    <form id="tx-edit-form">
-                        <div class="edit-form-group">
-                            <label>Date</label>
-                            <input type="date" id="edit-tx-date" required>
-                        </div>
-                        <div class="edit-form-group">
-                            <label>Category</label>
-                            <select id="edit-tx-category" required></select>
-                        </div>
-                        <div class="edit-form-group">
-                            <label>Amount (₹)</label>
-                            <input type="number" id="edit-tx-amount" step="0.01" required>
-                        </div>
-                        <div class="edit-form-group">
-                            <label>Owner</label>
-                            <select id="edit-tx-owner" required>
-                                <option value="Home">Home</option>
-                                <option value="Ujjwal">Ujjwal</option>
-                            </select>
-                        </div>
-                        <div class="edit-form-group">
-                            <label>Details</label>
-                            <textarea id="edit-tx-details" rows="2" required></textarea>
-                        </div>
-                        <div class="edit-form-group">
-                            <label>Comment</label>
-                            <textarea id="edit-tx-comment" rows="2"></textarea>
-                        </div>
-                        <div style="display: flex; gap: 10px; margin-top: 20px;">
-                            <button type="submit"
-                                style="flex: 2; background: #3498db; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Save
-                                Changes</button>
-                            <button type="button" id="delete-tx-btn"
-                                style="flex: 1; background: #e74c3c; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Delete</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
 
             <!-- Generic Alert/Confirm Modal -->
             <div id="alert-modal" class="modal" style="z-index: 2000;">
@@ -235,22 +151,6 @@
                 </div>
             </div>
 
-            <section class="content-list">
-                <div id="loading">Loading items...</div>
-                <table id="items-table">
-                    <thead>
-                        <tr>
-                            <th>Expense Name</th>
-                            <th>Outstanding</th>
-                            <th>Total Out.</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="items-list">
-                        <!-- Items will be injected here via JS -->
-                    </tbody>
-                </table>
-            </section>
         </main>
     </div>
 

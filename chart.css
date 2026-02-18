@@ -1,0 +1,49 @@
+/* Analytics Specifics */
+.filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 32px;
+    align-items: center;
+}
+
+.filters-bar label {
+    font-size: 0.85rem;
+    color: var(--secondary-text);
+    margin-right: 6px;
+}
+
+.filters-bar select {
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.filters-bar select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.analytics-main-row {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+}
+
+.chart-wrap-large {
+    position: relative;
+    width: 360px;
+    height: 360px;
+    flex-shrink: 0;
+}
+
+.shadow-table {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}

@@ -4,61 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        #transactions-modal .modal-content {
-            z-index: 1000;
-        }
-
-        #tx-edit-modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        #tx-edit-modal .modal-content {
-            background-color: #fff;
-            margin: 10% auto;
-            padding: 24px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .edit-form-group {
-            margin-bottom: 15px;
-        }
-
-        .edit-form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .edit-form-group input,
-        .edit-form-group select,
-        .edit-form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .tx-row:hover {
-            background-color: #f9f9f9;
-            cursor: pointer;
-        }
-    </style>
     <title>Expense</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="globals.css">
+    <link rel="stylesheet" href="index.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -72,90 +20,73 @@
         <main>
             <section class="actions">
                 <button id="open-modal-btn" class="primary-btn">+ Add New Expense</button>
-                <a href="chart.html"
-                    style="padding: 10px 18px; background: #9b59b6; color: white; border-radius: 8px; text-decoration: none; font-size: 0.9rem;">📊
-                    Analytics</a>
+                <a href="chart.html" class="secondary-btn">📊 Analytics</a>
             </section>
 
-            <div class="dashboard-flex"
-                style="display: flex; gap: 20px; max-width: 900px; margin: 20px auto; align-items: stretch;">
+            <div class="dashboard-grid">
                 <!-- Chart Section -->
-                <div class="chart-container"
-                    style="flex: 70; position: relative; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <a href="sources.html" title="View Detailed Table"
-                        style="position: absolute; top: 15px; right: 20px; text-decoration: none; font-size: 1.2rem; filter: grayscale(1); opacity: 0.6; transition: 0.3s; z-index: 10;">👁️</a>
+                <div class="dashboard-chart-section">
+                    <a href="sources.html" title="View Detailed Table" class="view-link-icon">👁️</a>
                     <canvas id="sourceChart"></canvas>
                 </div>
 
                 <!-- Summary Cards Section -->
-                <div class="summary-section" style="flex: 30; display: flex; flex-direction: column; gap: 15px;">
-                    <div class="card"
-                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                        <span
-                            style="font-size: 0.85rem; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Outstanding</span>
-                        <span id="total-outstanding-val"
-                            style="font-size: 1.6rem; font-weight: 700; color: #e67e22;">₹0</span>
+                <div class="dashboard-summary-section">
+                    <div class="summary-card">
+                        <span class="label">Outstanding</span>
+                        <span id="total-outstanding-val" class="value value-outstanding">₹0</span>
                     </div>
-                    <div class="card"
-                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                        <span
-                            style="font-size: 0.85rem; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Total
-                            Out.</span>
-                        <span id="total-out-val" style="font-size: 1.6rem; font-weight: 700; color: #3498db;">₹0</span>
+                    <div class="summary-card">
+                        <span class="label">Total Out.</span>
+                        <span id="total-out-val" class="value value-total">₹0</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Modal Structure -->
+            <!-- Modal Structure (Add Expense) -->
             <div id="expense-modal" class="modal">
                 <div class="modal-content">
                     <span class="close-btn">&times;</span>
                     <h2>Add Expense</h2>
-                    <form id="add-form" style="display: flex; flex-direction: column; gap: 10px;">
+                    <form id="add-form" class="flex-column">
                         <div class="form-group">
-                            <label for="input-name" style="font-size: 0.8rem; color: #666;">Source (Document)</label>
-                            <select id="input-name" required
-                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                            <label for="input-name">Source (Document)</label>
+                            <select id="input-name" required>
                                 <option value="" disabled selected>Select Source...</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="input-date" style="font-size: 0.8rem; color: #666;">Date</label>
+                            <label for="input-date">Date</label>
                             <input type="date" id="input-date" required>
                         </div>
                         <div class="form-group">
-                            <label for="input-details" style="font-size: 0.8rem; color: #666;">Details</label>
+                            <label for="input-details">Details</label>
                             <input type="text" id="input-details" placeholder="Details" required>
                         </div>
                         <div class="form-group">
-                            <label for="input-category" style="font-size: 0.8rem; color: #666;">Category</label>
-                            <select id="input-category" required
-                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white;">
-                            </select>
+                            <label for="input-category">Category</label>
+                            <select id="input-category" required></select>
                         </div>
                         <div class="form-group">
-                            <label for="input-amount" style="font-size: 0.8rem; color: #666;">Amount</label>
+                            <label for="input-amount">Amount</label>
                             <input type="number" id="input-amount" placeholder="Amount" step="0.01" required>
                         </div>
                         <div class="form-group">
-                            <label for="input-comment" style="font-size: 0.8rem; color: #666;">Comment
-                                (Optional)</label>
-                            <textarea id="input-comment" placeholder="Comment" rows="2"
-                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+                            <label for="input-comment">Comment (Optional)</label>
+                            <textarea id="input-comment" placeholder="Comment" rows="2"></textarea>
                         </div>
                         <div class="form-group">
-                            <label
-                                style="font-size: 0.8rem; color: #666; display: block; margin-bottom: 5px;">Owner</label>
-                            <div style="display: flex; gap: 15px;">
-                                <label style="display: flex; align-items: center; gap: 5px;">
+                            <label>Owner</label>
+                            <div class="flex-group">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
                                     <input type="radio" name="owner" value="Home" style="width: auto;" checked> Home
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 5px;">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
                                     <input type="radio" name="owner" value="Ujjwal" style="width: auto;"> Ujjwal
                                 </label>
                             </div>
                         </div>
-                        <button type="submit" id="add-btn">Add Transaction</button>
+                        <button type="submit" id="add-btn" class="primary-btn">Add Transaction</button>
                     </form>
                 </div>
             </div>
@@ -163,34 +94,34 @@
 
             <!-- Transactions View Modal -->
             <div id="transactions-modal" class="modal">
-                <div class="modal-content" style="max-width: 800px; width: 90%;">
-                    <span class="close-transactions-btn"
-                        style="float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                <div class="modal-content modal-content-wide">
+                    <span class="close-btn close-transactions-btn">&times;</span>
                     <h2 id="transactions-title">Transactions</h2>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <select id="filter-owner" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                    <div class="filters-bar" style="margin-bottom: 15px;">
+                        <select id="filter-owner">
                             <option value="All">All Owners</option>
                             <option value="Home">Home</option>
                             <option value="Ujjwal">Ujjwal</option>
                         </select>
-                        <select id="filter-month" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                        <select id="filter-month">
                             <option value="All">All Months</option>
                         </select>
-                        <button id="mark-paid-btn"
-                            style="margin-left: auto; padding: 5px 10px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">Mark
-                            All as Paid</button>
+                        <button id="mark-paid-btn" class="success-btn"
+                            style="margin-left: auto; padding: 6px 12px; border-radius: 6px;">
+                            Mark All as Paid
+                        </button>
                     </div>
 
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                    <div class="table-container">
+                        <table>
                             <thead>
-                                <tr style="background-color: #f2f2f2;">
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Date</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Details</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Amount</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Owner</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Actions</th>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Details</th>
+                                    <th>Amount</th>
+                                    <th>Owner</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="transactions-list">
@@ -201,64 +132,53 @@
             </div>
 
             <!-- Transaction Edit Modal -->
-            <div id="tx-edit-modal">
+            <div id="tx-edit-modal" class="modal">
                 <div class="modal-content">
-                    <span class="close-btn" id="close-tx-edit-btn"
-                        style="position: absolute; right: 20px; top: 15px; cursor: pointer;">&times;</span>
+                    <span class="close-btn" id="close-tx-edit-btn">&times;</span>
                     <h3>Edit Transaction</h3>
-                    <form id="tx-edit-form">
-                        <div class="edit-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date</label>
-                            <input type="date" id="edit-tx-date" required
-                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <form id="tx-edit-form" class="flex-column">
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="edit-tx-date" required>
                         </div>
-                        <div class="edit-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Category</label>
-                            <select id="edit-tx-category" required
-                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></select>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="edit-tx-category" required></select>
                         </div>
-                        <div class="edit-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Amount (₹)</label>
-                            <input type="number" id="edit-tx-amount" step="0.01" required
-                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <div class="form-group">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="edit-tx-amount" step="0.01" required>
                         </div>
-                        <div class="edit-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Owner</label>
-                            <select id="edit-tx-owner" required
-                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <div class="form-group">
+                            <label>Owner</label>
+                            <select id="edit-tx-owner" required>
                                 <option value="Home">Home</option>
                                 <option value="Ujjwal">Ujjwal</option>
                             </select>
                         </div>
-                        <div class="edit-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Details</label>
-                            <textarea id="edit-tx-details" rows="2" required
-                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                        <div class="form-group">
+                            <label>Details</label>
+                            <textarea id="edit-tx-details" rows="2" required></textarea>
                         </div>
-                        <div class="edit-group" style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Comment</label>
-                            <textarea id="edit-tx-comment" rows="2"
-                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                        <div class="form-group">
+                            <label>Comment</label>
+                            <textarea id="edit-tx-comment" rows="2"></textarea>
                         </div>
-                        <div style="display: flex; gap: 10px; margin-top: 20px;">
-                            <button type="submit"
-                                style="flex: 2; background: #3498db; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Save
-                                Changes</button>
-                            <button type="button" id="delete-tx-btn"
-                                style="flex: 1; background: #e74c3c; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Delete</button>
+                        <div class="flex-group" style="gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="primary-btn" style="flex: 2;">Save Changes</button>
+                            <button type="button" id="delete-tx-btn" class="danger-btn" style="flex: 1;">Delete</button>
                         </div>
                     </form>
                 </div>
             </div>
 
             <!-- Generic Alert/Confirm Modal -->
-            <div id="alert-modal" class="modal" style="z-index: 2000;">
-                <div class="modal-content" style="max-width: 400px; text-align: center;">
-                    <p id="alert-message" style="margin-bottom: 20px; font-size: 1.1rem;"></p>
-                    <div id="alert-actions" style="display: flex; justify-content: center; gap: 10px;">
+            <div id="alert-modal" class="modal">
+                <div class="modal-content modal-content-small">
+                    <p id="alert-message" style="margin-bottom: 24px; font-size: 1.1rem; font-weight: 500;"></p>
+                    <div id="alert-actions" class="flex-group" style="justify-content: center;">
                         <button id="alert-ok-btn" class="primary-btn">OK</button>
-                        <button id="alert-cancel-btn" class="cancel-btn"
-                            style="background:#dc3545; padding: 10px 20px; color: white; border: none; border-radius: 4px; display: none;">Cancel</button>
+                        <button id="alert-cancel-btn" class="danger-btn" style="display: none;">Cancel</button>
                     </div>
                 </div>
             </div>

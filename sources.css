@@ -1,0 +1,8 @@
+/* Sources Specific Styles */
+.shadow-table {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.text-center {
+    text-align: center;
+}

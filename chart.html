@@ -5,228 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analytics – Expense</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="globals.css">
+    <link rel="stylesheet" href="chart.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <style>
-        .analytics-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .back-btn {
-            background: none;
-            border: 1px solid #3498db;
-            color: #3498db;
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            text-decoration: none;
-        }
-
-        .back-btn:hover {
-            background: #3498db;
-            color: white;
-        }
-
-        .filters-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 28px;
-            align-items: center;
-        }
-
-        .filters-bar label {
-            font-size: 0.8rem;
-            color: #666;
-            margin-right: 4px;
-        }
-
-        .filters-bar select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: white;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-
-        .chart-area {
-            display: flex;
-            flex-direction: column;
-            gap: 28px;
-        }
-
-        .chart-top-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 32px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .chart-wrap {
-            position: relative;
-            width: 340px;
-            height: 340px;
-            flex-shrink: 0;
-        }
-
-        .no-data-msg {
-            display: none;
-            position: absolute;
-            inset: 0;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 1rem;
-        }
-
-        .summary-table {
-            width: 100%;
-        }
-
-        .summary-table table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .summary-table th,
-        .summary-table td {
-            padding: 10px 14px;
-            border: 1px solid #eee;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-
-        .summary-table thead tr {
-            background: #f2f2f2;
-        }
-
-        .summary-table .total-row {
-            font-weight: bold;
-            background: #f9f9f9;
-        }
-
-        .color-dot {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        .category-panel {
-            min-width: 180px;
-            background: #fafafa;
-            border: 1px solid #eee;
-            border-radius: 10px;
-            padding: 14px 16px;
-            flex-shrink: 0;
-        }
-
-        .category-panel h4 {
-            margin: 0 0 10px 0;
-            font-size: 0.85rem;
-            color: #555;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .cat-checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 0;
-            font-size: 0.88rem;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .cat-checkbox-item:last-child {
-            border-bottom: none;
-        }
-
-        .cat-checkbox-item input[type="checkbox"] {
-            cursor: pointer;
-            width: 15px;
-            height: 15px;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 24px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 800px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .close-btn {
-            float: right;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .close-btn:hover {
-            color: #333;
-        }
-
-        .modal-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
-        }
-
-        .modal-table th,
-        .modal-table td {
-            padding: 12px;
-            border: 1px solid #eee;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-
-        .modal-table thead tr {
-            background: #f2f2f2;
-        }
-
-        .clickable-row {
-            cursor: pointer;
-        }
-
-        .clickable-row:hover {
-            background-color: #f9f9f9;
-        }
-    </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="analytics-header">
+        <div class="sub-header">
             <a href="index.html" class="back-btn">← Back</a>
             <div>
-                <h1 style="margin:0;">Analytics</h1>
-                <p style="margin:0; color:#666; font-size:0.9rem;">Category-wise spending breakdown</p>
+                <h1>Analytics</h1>
+                <p>Category-wise spending breakdown</p>
             </div>
         </div>
 
@@ -253,56 +43,54 @@
             </div>
         </div>
 
-        <div class="chart-area">
-            <div class="chart-top-row">
-                <div class="chart-wrap">
-                    <canvas id="category-chart"></canvas>
-                    <div class="no-data-msg" id="no-data-msg" style="display:flex;">Loading...</div>
-                </div>
-                <!-- Category Filter Panel -->
-                <div class="category-panel">
-                    <h4>Categories</h4>
-                    <div id="category-checkboxes"></div>
-                </div>
+        <div class="analytics-main-row">
+            <div class="chart-wrap-large">
+                <canvas id="category-chart"></canvas>
+                <div class="no-data-msg" id="no-data-msg" style="display:flex;">Loading...</div>
             </div>
-            <div class="summary-table">
-                <table>
+
+            <div class="table-container" style="flex-grow: 1; min-width: 350px; max-width: 600px; margin-top: 0;">
+                <table class="summary-table shadow-table">
                     <thead>
                         <tr>
+                            <th style="width: 45px; text-align: center;"><input type="checkbox" id="master-category-cb"
+                                    checked title="Toggle All"></th>
                             <th>Category</th>
-                            <th>Amount (₹)</th>
-                            <th>%</th>
+                            <th style="text-align: right;">Amount (₹)</th>
+                            <th style="text-align: right; width: 85px;">%</th>
                         </tr>
                     </thead>
                     <tbody id="summary-tbody">
                     </tbody>
                 </table>
             </div>
-            <!-- Transaction Details Modal -->
-            <div id="tx-details-modal" class="modal">
-                <div class="modal-content">
-                    <span class="close-btn" id="close-tx-modal">&times;</span>
-                    <h2 id="modal-title">Transaction Details</h2>
-                    <div style="overflow-x: auto;">
-                        <table class="modal-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Source</th>
-                                    <th>Details</th>
-                                    <th>Amount (₹)</th>
-                                    <th>Owner</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modal-tbody">
-                            </tbody>
-                        </table>
-                    </div>
+        </div>
+
+        <!-- Transaction Details Modal -->
+        <div id="tx-details-modal" class="modal">
+            <div class="modal-content modal-content-wide">
+                <span class="close-btn" id="close-tx-modal">&times;</span>
+                <h2 id="modal-title">Transaction Details</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Source</th>
+                                <th>Details</th>
+                                <th>Amount (₹)</th>
+                                <th>Owner</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-tbody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+    </div>
 
-        <script type="module" src="src/chart.js"></script>
+    <script type="module" src="src/chart.js"></script>
 </body>
 
 </html>

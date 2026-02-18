@@ -4,130 +4,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        #transactions-modal .modal-content {
-            z-index: 1000;
-        }
-
-        #tx-edit-modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        #tx-edit-modal .modal-content {
-            background-color: #fff;
-            margin: 10% auto;
-            padding: 24px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .edit-form-group {
-            margin-bottom: 15px;
-        }
-
-        .edit-form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .edit-form-group input,
-        .edit-form-group select,
-        .edit-form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .analytics-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #eee;
-        }
-
-        .back-btn {
-            background: none;
-            border: 1px solid #3498db;
-            color: #3498db;
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .back-btn:hover {
-            background: #3498db;
-            color: white;
-        }
-
-        .tx-row:hover {
-            background-color: #f9f9f9;
-            cursor: pointer;
-        }
-    </style>
     <title>Expense - Sources</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="globals.css">
+    <link rel="stylesheet" href="sources.css">
 </head>
 
 <body>
     <div class="container">
-        <header class="analytics-header">
+        <header class="sub-header">
             <a href="index.html" class="back-btn">← Home</a>
             <div>
-                <h1 style="margin:0; color: #3498db;">Expense Sources</h1>
-                <p style="margin:0; color:#666; font-size:0.9rem;">Manage your spending sources</p>
+                <h1 style="color: var(--primary-color);">Expense Sources</h1>
+                <p>Manage your spending sources</p>
             </div>
         </header>
 
         <main>
             <!-- Transactions View Modal -->
             <div id="transactions-modal" class="modal">
-                <div class="modal-content" style="max-width: 800px; width: 90%;">
-                    <span class="close-transactions-btn"
-                        style="float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                <div class="modal-content modal-content-wide">
+                    <span class="close-btn close-transactions-btn">&times;</span>
                     <h2 id="transactions-title">Transactions</h2>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <select id="filter-owner" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                    <div class="filters-bar" style="margin-bottom: 15px;">
+                        <select id="filter-owner">
                             <option value="All">All Owners</option>
                             <option value="Home">Home</option>
                             <option value="Ujjwal">Ujjwal</option>
                         </select>
-                        <select id="filter-month" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                        <select id="filter-month">
                             <option value="All">All Months</option>
                         </select>
-                        <button id="mark-paid-btn"
-                            style="margin-left: auto; padding: 5px 10px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">Mark
-                            All as Paid</button>
+                        <button id="mark-paid-btn" class="success-btn"
+                            style="margin-left: auto; padding: 6px 12px; border-radius: 6px;">
+                            Mark All as Paid
+                        </button>
                     </div>
 
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                    <div class="table-container">
+                        <table>
                             <thead>
-                                <tr style="background-color: #f2f2f2;">
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Date</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Details</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Amount</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Owner</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Actions</th>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Details</th>
+                                    <th>Amount</th>
+                                    <th>Owner</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="transactions-list">
@@ -138,64 +60,61 @@
             </div>
 
             <!-- Transaction Edit Modal -->
-            <div id="tx-edit-modal">
+            <div id="tx-edit-modal" class="modal">
                 <div class="modal-content">
                     <span class="close-btn" id="close-tx-edit-btn">&times;</span>
                     <h3>Edit Transaction</h3>
-                    <form id="tx-edit-form">
-                        <div class="edit-form-group">
+                    <form id="tx-edit-form" class="flex-column">
+                        <div class="form-group">
                             <label>Date</label>
                             <input type="date" id="edit-tx-date" required>
                         </div>
-                        <div class="edit-form-group">
+                        <div class="form-group">
                             <label>Category</label>
                             <select id="edit-tx-category" required></select>
                         </div>
-                        <div class="edit-form-group">
+                        <div class="form-group">
                             <label>Amount (₹)</label>
                             <input type="number" id="edit-tx-amount" step="0.01" required>
                         </div>
-                        <div class="edit-form-group">
+                        <div class="form-group">
                             <label>Owner</label>
                             <select id="edit-tx-owner" required>
                                 <option value="Home">Home</option>
                                 <option value="Ujjwal">Ujjwal</option>
                             </select>
                         </div>
-                        <div class="edit-form-group">
+                        <div class="form-group">
                             <label>Details</label>
                             <textarea id="edit-tx-details" rows="2" required></textarea>
                         </div>
-                        <div class="edit-form-group">
+                        <div class="form-group">
                             <label>Comment</label>
                             <textarea id="edit-tx-comment" rows="2"></textarea>
                         </div>
-                        <div style="display: flex; gap: 10px; margin-top: 20px;">
-                            <button type="submit"
-                                style="flex: 2; background: #3498db; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Save
-                                Changes</button>
-                            <button type="button" id="delete-tx-btn"
-                                style="flex: 1; background: #e74c3c; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Delete</button>
+                        <div class="flex-group" style="margin-top: 20px;">
+                            <button type="submit" class="primary-btn" style="flex: 2;">Save Changes</button>
+                            <button type="button" id="delete-tx-btn" class="danger-btn" style="flex: 1;">Delete</button>
                         </div>
                     </form>
                 </div>
             </div>
 
             <!-- Alert Modal -->
-            <div id="alert-modal" class="modal" style="z-index: 2000;">
-                <div class="modal-content" style="max-width: 400px; text-align: center;">
-                    <p id="alert-message" style="margin-bottom: 20px; font-size: 1.1rem;"></p>
-                    <div id="alert-actions" style="display: flex; justify-content: center; gap: 10px;">
+            <div id="alert-modal" class="modal">
+                <div class="modal-content modal-content-small">
+                    <p id="alert-message" style="margin-bottom: 24px; font-size: 1.1rem; font-weight: 500;"></p>
+                    <div id="alert-actions" class="flex-group" style="justify-content: center;">
                         <button id="alert-ok-btn" class="primary-btn">OK</button>
-                        <button id="alert-cancel-btn" class="cancel-btn"
-                            style="background:#dc3545; padding: 10px 20px; color: white; border: none; border-radius: 4px; display: none;">Cancel</button>
+                        <button id="alert-cancel-btn" class="danger-btn" style="display: none;">Cancel</button>
                     </div>
                 </div>
             </div>
 
-            <section class="content-list">
-                <div id="loading">Loading sources...</div>
-                <table id="items-table">
+            <section class="table-container">
+                <div id="loading" class="text-center" style="padding: 40px; color: var(--secondary-text);">Loading
+                    sources...</div>
+                <table id="items-table" class="shadow-table">
                     <thead>
                         <tr>
                             <th>Expense Name</th>

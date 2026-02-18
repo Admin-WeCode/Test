@@ -384,7 +384,7 @@ function renderTransactions() {
         if (tx.status === "pending") {
             actionsHtml = `<button class="mark-paid-single-btn" data-id="${tx.id}" style="padding: 2px 5px; font-size: 0.8rem; background-color: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer;">Mark Paid</button>`;
         } else {
-            actionsHtml = `<span style="color: #27ae60; font-size: 0.8rem;">Paid</span>`;
+            actionsHtml = `<button class="mark-unpaid-single-btn" data-id="${tx.id}" style="padding: 2px 5px; font-size: 0.8rem; background-color: #e67e22; color: white; border: none; border-radius: 3px; cursor: pointer;">Mark Unpaid</button>`;
         }
 
         row.innerHTML = `
@@ -402,6 +402,13 @@ function renderTransactions() {
             btn.addEventListener("click", async () => {
                 showNotification("Mark this transaction as Paid?", true, async () => {
                     await updateTransactionStatus(currentSourceId, tx.id, "paid");
+                });
+            });
+        } else {
+            const btn = row.querySelector(".mark-unpaid-single-btn");
+            btn.addEventListener("click", async () => {
+                showNotification("Mark this transaction as Unpaid (Pending)?", true, async () => {
+                    await updateTransactionStatus(currentSourceId, tx.id, "pending");
                 });
             });
         }

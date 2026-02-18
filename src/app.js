@@ -1,4 +1,4 @@
-import { subscribeToItems, deleteItem, updateItem, addTransaction, getPendingTotal, subscribeToTransactions, updateTransactionStatus, markTransactionsAsPaid } from "./firebase-service.js";
+import { subscribeToItems, deleteItem, updateItem, addTransaction, subscribeToTransactions, updateTransactionStatus, markTransactionsAsPaid } from "./firebase-service.js";
 
 const form = document.getElementById("add-form");
 const listContainer = document.getElementById("items-list");
@@ -248,7 +248,7 @@ function renderItems(items) {
     listContainer.innerHTML = "";
 
     if (items.length === 0) {
-        listContainer.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#999; padding:15px;">No expenses found.</td></tr>`;
+        listContainer.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999; padding:15px;">No expenses found.</td></tr>`;
         return;
     }
 
@@ -260,7 +260,8 @@ function renderItems(items) {
             // Edit Mode - Table Row
             tr.innerHTML = `
                 <td>${item.id}</td>
-                <td><input type="number" class="edit-total edit-input-table" value="${item.totalOutstanding}" required></td>
+                <td><input type="number" class="edit-outstanding edit-input-table" value="${item.outstanding || 0}"></td>
+                <td><input type="number" class="edit-total edit-input-table" value="${item.totalOutstanding || 0}"></td>
                 <td>
                     <div style="display:flex; gap:5px;">
                         <button class="save-btn" style="padding:5px 8px; font-size:0.8rem;">Save</button>
@@ -272,6 +273,7 @@ function renderItems(items) {
             // Handle Save
             tr.querySelector(".save-btn").addEventListener("click", async () => {
                 const updatedData = {
+                    outstanding: Number(tr.querySelector(".edit-outstanding").value),
                     totalOutstanding: Number(tr.querySelector(".edit-total").value)
                 };
 
@@ -289,7 +291,8 @@ function renderItems(items) {
             // View Mode - Table Row
             tr.innerHTML = `
                 <td><strong>${item.id}</strong></td>
-                <td>${item.totalOutstanding}</td>
+                <td>₹${(item.outstanding || 0).toLocaleString()}</td>
+                <td>₹${(item.totalOutstanding || 0).toLocaleString()}</td>
                 <td>
                      <div class="item-actions">
                         <button class="view-btn" style="background-color: #3498db; padding: 5px 10px; font-size: 0.8rem; color: white; border: none; border-radius: 4px; cursor: pointer;">View</button>

@@ -30,7 +30,8 @@ export async function addTransaction(sourceId, transactionData) {
         const subColRef = collection(db, COLLECTION_NAME, sourceId, "transactions");
         const docRef = await addDoc(subColRef, transactionData);
 
-        await updateItem(sourceId, { totalOutstanding: await getPendingTotal(sourceId) });
+        const totals = await getSourceTotals(sourceId);
+        await updateItem(sourceId, totals);
 
         console.log("Transaction added with ID: ", docRef.id);
         console.log(transactionData);
@@ -111,26 +112,30 @@ export async function updateItem(id, data) {
 }
 
 /**
- * Calculate total amount of pending transactions for a source
+ * Calculate both pending and total individual sums for a source
  * @param {string} sourceId - The ID of the parent expense document
- * @returns {Promise<number>} - The sum of amounts
+ * @returns {Promise<{outstanding: number, totalOutstanding: number}>} - The sums
  */
-export async function getPendingTotal(sourceId) {
+export async function getSourceTotals(sourceId) {
     try {
         const transactionsRef = collection(db, COLLECTION_NAME, sourceId, "transactions");
-        const q = query(transactionsRef, where("status", "==", "pending"));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(transactionsRef);
 
-        let total = 0;
+        let outstanding = 0;
+        let totalOutstanding = 0;
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            total += Number(data.amount) || 0;
+            const amt = Number(data.amount) || 0;
+            totalOutstanding += amt;
+            if (data.status === "pending") {
+                outstanding += amt;
+            }
         });
 
-        console.log(`Pending total for ${sourceId}:`, total);
-        return total;
+        console.log(`Totals for ${sourceId}:`, { outstanding, totalOutstanding });
+        return { outstanding, totalOutstanding };
     } catch (e) {
-        console.error("Error calculating pending total:", e);
+        console.error("Error calculating source totals:", e);
         throw e;
     }
 }
@@ -143,9 +148,9 @@ export async function updateTransactionStatus(sourceId, transactionId, status) {
         const txRef = doc(db, COLLECTION_NAME, sourceId, "transactions", transactionId);
         await updateDoc(txRef, { status: status });
 
-        // Recalculate total
-        const newTotal = await getPendingTotal(sourceId);
-        await updateItem(sourceId, { totalOutstanding: newTotal });
+        // Recalculate totals
+        const totals = await getSourceTotals(sourceId);
+        await updateItem(sourceId, totals);
 
         console.log(`Transaction ${transactionId} status updated to ${status}`);
     } catch (e) {
@@ -168,9 +173,9 @@ export async function markTransactionsAsPaid(sourceId, transactionIds) {
         });
         await batch.commit();
 
-        // Recalculate total
-        const newTotal = await getPendingTotal(sourceId);
-        await updateItem(sourceId, { totalOutstanding: newTotal });
+        // Recalculate totals
+        const totals = await getSourceTotals(sourceId);
+        await updateItem(sourceId, totals);
 
         console.log(`Marked ${transactionIds.length} transactions as paid.`);
     } catch (e) {

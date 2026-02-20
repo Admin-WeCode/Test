@@ -384,7 +384,7 @@ function renderTransactions() {
 
         row.innerHTML = `
             <td>${tx.date}</td>
-            ${isGlobal ? `<td class="col-source text-muted small">${tx.sourceId}</td>` : ''}
+            ${isGlobal ? `<td class="col-source"><span class="badge bg-light text-dark border">${tx.sourceId}</span></td>` : ''}
             <td class="fw-medium">${tx.details}</td>
             <td class="fw-bold text-dark">₹${(tx.amount || 0).toLocaleString()}</td>
             <td><span class="badge bg-light text-dark border">${tx.owners || ""}</span></td>

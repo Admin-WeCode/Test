@@ -165,16 +165,43 @@ function showTransactionsModal(category) {
     });
 
     if (txModalTitle) txModalTitle.textContent = `Transactions: ${category}`;
+
+    // UI Toggles: Since we are viewing a category across multiple sources, 
+    // we SHOULD show the source column.
+    const sourceCols = document.querySelectorAll('.col-source');
+    sourceCols.forEach(el => el.style.display = '');
+
+    const multiSourceFilter = document.getElementById("multi-source-filter");
+    const modalTotalFooter = document.getElementById("modal-total-footer");
+    const grandTotalVal = document.getElementById("grand-total-val");
+    const outstandingTotalVal = document.getElementById("outstanding-total-val");
+
+    if (multiSourceFilter) multiSourceFilter.style.display = 'none'; // Categories view uses its own chart filters
+    if (modalTotalFooter) modalTotalFooter.style.display = '';
+
     if (txModalBody) {
         txModalBody.innerHTML = filtered.map(tx => `
             <tr style="cursor: pointer" class="tx-row" data-id="${tx.id}" data-source="${tx.sourceId}">
                 <td>${tx.date}</td>
-                <td><span class="badge bg-light text-dark border">${tx.sourceId}</span></td>
+                <td class="col-source"><span class="badge bg-light text-dark border">${tx.sourceId}</span></td>
                 <td class="fw-medium">${tx.details}</td>
-                <td class="text-end fw-bold">₹${Number(tx.amount).toLocaleString()}</td>
+                <td class="fw-bold">₹${Number(tx.amount).toLocaleString()}</td>
                 <td><span class="badge bg-light text-dark border">${tx.owners || "Home"}</span></td>
+                <td class="text-end">
+                    <button class="btn btn-sm ${tx.status === "paid" ? 'btn-warning' : 'btn-success'} py-1 px-2">
+                         <span class="material-icons align-middle" style="font-size: 1.1rem;">${tx.status === "paid" ? 'check_circle' : 'pending'}</span>
+                    </button>
+                </td>
             </tr>
         `).join("");
+
+        // Update Totals in Footer
+        const total = filtered.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+        const outstanding = filtered.filter(tx => tx.status !== "paid")
+            .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+
+        if (grandTotalVal) grandTotalVal.innerText = `₹${total.toLocaleString()}`;
+        if (outstandingTotalVal) outstandingTotalVal.innerText = `₹${outstanding.toLocaleString()}`;
 
         document.querySelectorAll(".tx-row").forEach(row => {
             row.onclick = () => {

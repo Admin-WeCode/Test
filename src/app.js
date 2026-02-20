@@ -1,4 +1,4 @@
-import { subscribeToItems, addTransaction, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction } from "./firebase-service.js";
+import { subscribeToItems, addTransaction, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction, fetchAllTransactions } from "./firebase-service.js";
 import { Calculator } from "./calculator.js";
 import { MultiAdder } from "./multi-adder.js";
 import { CATEGORIES, setupNotification, initCommonModals, setupUtilityButtons, populateSelect, injectSharedModals } from "./ui-utils.js";
@@ -24,7 +24,6 @@ const inputCategory = document.getElementById("input-category");
 populateSelect(inputCategory, CATEGORIES, "Select Category...");
 
 // DOM Selectors for transaction interactions
-const closeTxModalBtn = document.querySelector(".close-transactions-btn");
 const txListContainer = document.getElementById("transactions-list");
 const txTitle = document.getElementById("transactions-title");
 const filterOwner = document.getElementById("filter-owner");
@@ -37,7 +36,6 @@ let ALL_SOURCE_IDS = []; // Track all source IDs for editing
 
 // Edit Transaction Form Selectors
 const txEditForm = document.getElementById("tx-edit-form");
-const closeTxEditBtn = document.getElementById("close-tx-edit-btn");
 const deleteTxBtn = document.getElementById("delete-tx-btn");
 
 const editTxDate = document.getElementById("edit-tx-date");
@@ -172,6 +170,10 @@ function openTransactionsModal(sourceId) {
 
     modals['transactions-modal'].show();
 
+    // Toggle Source column off
+    const sourceCols = document.querySelectorAll('.col-source');
+    sourceCols.forEach(el => el.style.display = 'none');
+
     filterOwner.value = "All";
     filterMonth.innerHTML = '<option value="All">All Months</option>';
     if (txUnsubscribe) txUnsubscribe();
@@ -184,11 +186,54 @@ function openTransactionsModal(sourceId) {
     });
 }
 
+// Global All Transactions Modal
+async function openAllTransactionsModal() {
+    currentSourceId = "All";
+    txTitle.innerText = "All Transactions";
+    txListContainer.innerHTML = '<tr><td colspan="6" class="text-center p-4"><div class="spinner-border text-primary" role="status"></div></td></tr>';
+
+    modals['transactions-modal'].show();
+
+    // Toggle Source column on
+    const sourceCols = document.querySelectorAll('.col-source');
+    sourceCols.forEach(el => el.style.display = '');
+
+    if (txUnsubscribe) {
+        txUnsubscribe();
+        txUnsubscribe = null;
+    }
+
+    try {
+        currentTransactions = await fetchAllTransactions(ALL_SOURCE_IDS);
+
+        // Sorting and filtering
+        populateMonthFilter(currentTransactions);
+
+        // Default Filters
+        if (filterOwner) filterOwner.value = "Home";
+        if (filterMonth) {
+            const now = new Date().toISOString().substring(0, 7);
+            filterMonth.value = filterMonth.querySelector(`option[value="${now}"]`) ? now : "All";
+        }
+
+        renderTransactions();
+    } catch (err) {
+        console.error("Failed to fetch all transactions:", err);
+        txListContainer.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-danger">Failed to load transactions from all sources.</td></tr>';
+    }
+}
+
 // Quick-Add button in transactions modal
 const modalAddBtn = document.getElementById("modal-add-btn");
 if (modalAddBtn) {
     modalAddBtn.onclick = () => {
-        if (inputName) inputName.value = currentSourceId;
+        if (inputName) {
+            if (currentSourceId && currentSourceId !== "All") {
+                inputName.value = currentSourceId;
+            } else {
+                inputName.selectedIndex = 0;
+            }
+        }
         if (inputDate) inputDate.valueAsDate = new Date();
         modals['expense-modal'].show();
     };
@@ -216,8 +261,11 @@ function renderTransactions() {
     );
 
     txListContainer.innerHTML = "";
+    const isGlobal = currentSourceId === "All";
+    const colCount = isGlobal ? 6 : 5;
+
     if (filtered.length === 0) {
-        txListContainer.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No transactions found.</td></tr>';
+        txListContainer.innerHTML = `<tr><td colspan="${colCount}" class="text-center p-5 text-muted">No transactions found.</td></tr>`;
         markPaidBtn.disabled = true;
     } else {
         markPaidBtn.disabled = false;
@@ -234,12 +282,13 @@ function renderTransactions() {
     filtered.forEach(tx => {
         const row = document.createElement("tr");
         row.style.cursor = "pointer";
-        row.onclick = (e) => !e.target.closest("button") && openTxEditModal(tx);
+        row.onclick = (e) => !e.target.closest("button") && openTxEditModal(tx, isGlobal ? tx.sourceId : currentSourceId);
 
         const icon = tx.status === "paid" ? "check_circle" : "pending";
 
         row.innerHTML = `
             <td>${tx.date}</td>
+            ${isGlobal ? `<td class="col-source text-muted small">${tx.sourceId}</td>` : ''}
             <td class="fw-medium">${tx.details}</td>
             <td class="fw-bold text-dark">₹${(tx.amount || 0).toLocaleString()}</td>
             <td><span class="badge bg-light text-dark border">${tx.owners || ""}</span></td>
@@ -252,18 +301,27 @@ function renderTransactions() {
 
         row.querySelector("button").onclick = (e) => {
             e.stopPropagation();
+            const sid = isGlobal ? tx.sourceId : currentSourceId;
             const newStatus = tx.status === "pending" ? "paid" : "pending";
-            showNotification(`Mark as ${newStatus === "paid" ? "Paid" : "Unpaid"}?`, true, () => updateTransactionStatus(currentSourceId, tx.id, newStatus));
+            showNotification(`Mark as ${newStatus === "paid" ? "Paid" : "Unpaid"}?`, true, async () => {
+                await updateTransactionStatus(sid, tx.id, newStatus);
+                if (isGlobal) {
+                    // Update local state and re-render
+                    tx.status = newStatus;
+                    renderTransactions();
+                }
+            });
         };
         txListContainer.appendChild(row);
     });
 }
 
-function openTxEditModal(tx) {
+function openTxEditModal(tx, sourceId) {
     editingTransactionId = tx.id;
+    currentSourceIdForEdit = sourceId; // Track which source we're editing
     currentTxStatus = tx.status || "pending";
     if (editTxDate) editTxDate.value = tx.date;
-    if (editTxSource) editTxSource.value = currentSourceId;
+    if (editTxSource) editTxSource.value = sourceId;
     if (editTxCategory) editTxCategory.value = tx.category || "Other";
     if (editTxAmount) editTxAmount.value = tx.amount;
     if (editTxOwner) editTxOwner.value = tx.owners || "Home";
@@ -272,8 +330,11 @@ function openTxEditModal(tx) {
     modals['tx-edit-modal'].show();
 }
 
+let currentSourceIdForEdit = null;
+
 // Global Modal Elements for "Add Transaction"
 const openMainModalBtn = document.getElementById("open-modal-btn");
+const openAllTxBtn = document.getElementById("open-all-tx-btn");
 
 // Event Listeners for Opening Modals
 if (openMainModalBtn) {
@@ -283,8 +344,12 @@ if (openMainModalBtn) {
     };
 }
 
-// Handle unsubscription when the transactions modal is closed (any way: ESC, backdrop, or close button)
-document.getElementById('transactions-modal').addEventListener('hidden.bs.modal', () => {
+if (openAllTxBtn) {
+    openAllTxBtn.onclick = openAllTransactionsModal;
+}
+
+// Handle unsubscription when the transactions modal is closed
+document.getElementById('transactions-modal')?.addEventListener('hidden.bs.modal', () => {
     if (txUnsubscribe) {
         txUnsubscribe();
         txUnsubscribe = null;
@@ -319,6 +384,7 @@ form.onsubmit = async (e) => {
         form.reset();
         modals['expense-modal'].hide();
         document.getElementById("input-date").valueAsDate = new Date();
+        if (currentSourceId === "All") openAllTransactionsModal(); // Refresh global view
     } catch (error) {
         showNotification("Failed to add transaction.");
     }
@@ -337,15 +403,16 @@ txEditForm.onsubmit = async (e) => {
         status: currentTxStatus
     };
     try {
-        if (newSourceId !== currentSourceId) {
-            await moveTransaction(currentSourceId, newSourceId, editingTransactionId, updatedData);
+        if (newSourceId !== currentSourceIdForEdit) {
+            await moveTransaction(currentSourceIdForEdit, newSourceId, editingTransactionId, updatedData);
             showNotification("Moved & Updated!");
             modals['tx-edit-modal'].hide();
-            modals['transactions-modal'].hide(); // List is stale
+            modals['transactions-modal'].hide();
         } else {
-            await updateTransaction(currentSourceId, editingTransactionId, updatedData);
+            await updateTransaction(currentSourceIdForEdit, editingTransactionId, updatedData);
             showNotification("Updated!");
             modals['tx-edit-modal'].hide();
+            if (currentSourceId === "All") openAllTransactionsModal(); // Refresh global view
         }
     } catch (err) {
         showNotification("Failed to save changes.");
@@ -355,9 +422,10 @@ txEditForm.onsubmit = async (e) => {
 deleteTxBtn.onclick = () => {
     showNotification("Delete transaction forever?", true, async () => {
         try {
-            await deleteTransaction(currentSourceId, editingTransactionId);
+            await deleteTransaction(currentSourceIdForEdit, editingTransactionId);
             showNotification("Deleted!");
             modals['tx-edit-modal'].hide();
+            if (currentSourceId === "All") openAllTransactionsModal(); // Refresh global view
         } catch (err) {
             showNotification("Failed to delete.");
         }
@@ -368,16 +436,27 @@ markPaidBtn.onclick = () => {
     const action = markPaidBtn.dataset.action;
     const ownerFilter = filterOwner.value;
     const monthFilter = filterMonth.value;
-    const ids = currentTransactions
+
+    // Group transactions by sourceId for bulk update
+    const sourceGroups = {};
+    currentTransactions
         .filter(tx =>
             (ownerFilter === "All" || tx.owners === ownerFilter) &&
             (monthFilter === "All" || (tx.date && tx.date.startsWith(monthFilter)))
         )
-        .map(tx => tx.id);
+        .forEach(tx => {
+            if (!sourceGroups[tx.sourceId]) sourceGroups[tx.sourceId] = [];
+            sourceGroups[tx.sourceId].push(tx.id);
+        });
 
-    showNotification(`Mark ${ids.length} transactions as ${action === "paid" ? "Paid" : "Unpaid"}?`, true, () =>
-        bulkUpdateTransactionStatus(currentSourceId, ids, action)
-    );
+    const totalCount = Object.values(sourceGroups).reduce((acc, ids) => acc + ids.length, 0);
+
+    showNotification(`Mark ${totalCount} transactions as ${action === "paid" ? "Paid" : "Unpaid"}?`, true, async () => {
+        await Promise.all(Object.entries(sourceGroups).map(([sid, ids]) =>
+            bulkUpdateTransactionStatus(sid, ids, action)
+        ));
+        if (currentSourceId === "All") openAllTransactionsModal();
+    });
 };
 
 filterOwner.onchange = filterMonth.onchange = renderTransactions;

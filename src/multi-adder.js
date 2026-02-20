@@ -33,13 +33,13 @@ export class MultiAdder {
                         <label>Amount</label>
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-7">
                     <div class="form-floating">
                         <input type="text" class="form-control item-detail" placeholder="Detail" value="${detail}">
                         <label>Detail</label>
                     </div>
                 </div>
-                <div class="col-2 text-end">
+                <div class="col-1 text-end">
                     <button type="button" class="btn btn-link text-danger p-0 delete-row-btn">
                         <span class="material-icons">delete</span>
                     </button>

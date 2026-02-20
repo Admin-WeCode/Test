@@ -1,6 +1,7 @@
 import { subscribeToItems, fetchAllTransactions, updateTransaction, deleteTransaction, moveTransaction, addTransaction } from "./firebase-service.js";
 import { Calculator } from "./calculator.js";
 import { MultiAdder } from "./multi-adder.js";
+import { CATEGORIES, setupNotification, initCommonModals, setupUtilityButtons, populateSelect } from "./ui-utils.js";
 
 // DOM Selectors with safety checks
 const filterSource = document.getElementById("chart-filter-source");
@@ -52,44 +53,20 @@ let currentTxStatus = "pending";
 let currentCategory = ""; // For context-aware quick add
 
 // Bootstrap Modal Instances
-let detailsModal, editModal, alertModal, mainRecordModal, calculator, multiAdder;
+let modals = {};
+let calculator, multiAdder, showNotification;
 
 document.addEventListener('DOMContentLoaded', () => {
-    const detailsEl = document.getElementById('tx-details-modal');
-    const editEl = document.getElementById('tx-edit-modal');
-    const alertEl = document.getElementById('alert-modal');
-    const addEl = document.getElementById('expense-modal');
-
-    if (detailsEl) detailsModal = new bootstrap.Modal(detailsEl);
-    if (editEl) editModal = new bootstrap.Modal(editEl);
-    if (alertEl) alertModal = new bootstrap.Modal(alertEl);
-    if (addEl) mainRecordModal = new bootstrap.Modal(addEl);
+    modals = initCommonModals(['tx-details-modal', 'tx-edit-modal', 'alert-modal', 'expense-modal']);
     calculator = new Calculator();
     multiAdder = new MultiAdder();
 
-    // Calculator button listener
-    const openCalcBtn = document.getElementById('open-calc-btn');
-    if (openCalcBtn) {
-        openCalcBtn.onclick = () => {
-            calculator.open(inputAmount.value || 0, (result) => {
-                inputAmount.value = result;
-            });
-        };
-    }
+    showNotification = setupNotification(modals['alert-modal'], alertMessage, alertOkBtn, alertCancelBtn);
 
-    // Multi-Adder button listener
-    const openMultiAdderBtn = document.getElementById('open-multi-adder-btn');
-    if (openMultiAdderBtn) {
-        openMultiAdderBtn.onclick = () => {
-            multiAdder.open(({ totalAmount, comment }) => {
-                if (inputAmount) inputAmount.value = totalAmount;
-                if (inputComment) inputComment.value = comment;
-            });
-        };
-    }
+    setupUtilityButtons(calculator, multiAdder, inputAmount, inputComment);
 });
 
-const CATEGORIES = ["Grocery", "Pets", "Fuel", "Dining", "LIC/OICL", "Travel", "Entertainment", "Utility Bills", "Rent", "Other"];
+// CATEGORIES imported from ui-utils.js
 
 // Helper: Consistent category colors
 const categoryColorMap = {};
@@ -110,28 +87,11 @@ subscribeToItems(async (items) => {
     try {
         sourceIds = items.map(i => i.id);
 
-        if (filterSource) {
-            filterSource.innerHTML = `<option value="All">All Sources</option>` +
-                sourceIds.map(id => `<option value="${id}">${id}</option>`).join("");
-        }
-
-        if (inputName) {
-            inputName.innerHTML = `<option value="" disabled selected>Source...</option>` +
-                sourceIds.map(id => `<option value="${id}">${id}</option>`).join("");
-        }
-
-        if (editTxSource) {
-            editTxSource.innerHTML = sourceIds.map(id => `<option value="${id}">${id}</option>`).join("");
-        }
-
-        if (inputCategory) {
-            inputCategory.innerHTML = `<option value="" disabled selected>Select Category...</option>` +
-                CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
-        }
-
-        if (editTxCategory) {
-            editTxCategory.innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
-        }
+        populateSelect(filterSource, sourceIds, "All Sources", "All", false);
+        populateSelect(inputName, sourceIds, "Source...");
+        populateSelect(editTxSource, sourceIds);
+        populateSelect(inputCategory, CATEGORIES, "Select Category...");
+        populateSelect(editTxCategory, CATEGORIES);
 
         allTransactions = await fetchAllTransactions(sourceIds);
 
@@ -227,7 +187,7 @@ function showTransactionsModal(category) {
             txModalBody.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No records matching filters.</td></tr>';
         }
     }
-    if (detailsModal) detailsModal.show();
+    if (modals['tx-details-modal']) modals['tx-details-modal'].show();
 }
 
 function openEditModal(tx) {
@@ -241,7 +201,7 @@ function openEditModal(tx) {
     if (editTxOwner) editTxOwner.value = tx.owners || "Home";
     if (editTxDetails) editTxDetails.value = tx.details;
     if (editTxComment) editTxComment.value = tx.comment || "";
-    if (editModal) editModal.show();
+    if (modals['tx-edit-modal']) modals['tx-edit-modal'].show();
 }
 
 const modalAddBtn = document.getElementById("modal-add-btn");
@@ -249,7 +209,7 @@ if (modalAddBtn) {
     modalAddBtn.onclick = () => {
         if (inputCategory) inputCategory.value = currentCategory === "Uncategorised" ? "" : currentCategory;
         if (inputDate) inputDate.valueAsDate = new Date();
-        if (mainRecordModal) mainRecordModal.show();
+        if (modals['expense-modal']) modals['expense-modal'].show();
     };
 }
 
@@ -258,21 +218,7 @@ const refreshData = async () => {
     renderChart();
 };
 
-function showNotification(message, isConfirmation = false, onConfirmCallback = null) {
-    if (!alertMessage || !alertModal) return;
-    alertMessage.textContent = message;
-    alertOkBtn.onclick = () => {
-        alertModal.hide();
-        if (isConfirmation && onConfirmCallback) onConfirmCallback();
-    };
-    if (isConfirmation) {
-        alertCancelBtn.style.display = "inline-block";
-        alertCancelBtn.onclick = () => alertModal.hide();
-    } else {
-        alertCancelBtn.style.display = "none";
-    }
-    alertModal.show();
-}
+// showNotification defined via setupNotification in DOMContentLoaded
 
 // ── Core Logic ───────────────────────────────────────────────────────────────
 
@@ -424,7 +370,7 @@ if (form) {
             await addTransaction(srcId, transactionData);
             showNotification("Added successfully!");
             form.reset();
-            if (mainRecordModal) mainRecordModal.hide();
+            if (modals['expense-modal']) modals['expense-modal'].hide();
             refreshData();
         } catch (error) {
             showNotification("Failed to add transaction.");
@@ -449,12 +395,12 @@ if (txEditForm) {
             if (newSourceId !== currentSourceId) {
                 await moveTransaction(currentSourceId, newSourceId, editingTransactionId, updatedData);
                 showNotification("Moved & Updated!");
-                if (editModal) editModal.hide();
-                if (detailsModal) detailsModal.hide();
+                if (modals['tx-edit-modal']) modals['tx-edit-modal'].hide();
+                if (modals['tx-details-modal']) modals['tx-details-modal'].hide();
             } else {
                 await updateTransaction(currentSourceId, editingTransactionId, updatedData);
                 showNotification("Updated!");
-                if (editModal) editModal.hide();
+                if (modals['tx-edit-modal']) modals['tx-edit-modal'].hide();
             }
             refreshData();
         } catch (err) {
@@ -468,8 +414,8 @@ if (deleteTxBtn) {
         try {
             await deleteTransaction(currentSourceId, editingTransactionId);
             showNotification("Deleted!");
-            if (editModal) editModal.hide();
-            if (detailsModal) detailsModal.hide(); // Hide the list modal too as it might be stale
+            if (modals['tx-edit-modal']) modals['tx-edit-modal'].hide();
+            if (modals['tx-details-modal']) modals['tx-details-modal'].hide(); // Hide the list modal too as it might be stale
             refreshData();
         } catch (err) {
             showNotification("Failed to delete.");

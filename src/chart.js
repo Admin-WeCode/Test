@@ -1,4 +1,5 @@
 import { subscribeToItems, fetchAllTransactions, updateTransaction, deleteTransaction, moveTransaction, addTransaction } from "./firebase-service.js";
+import { Calculator } from "./calculator.js";
 
 // DOM Selectors with safety checks
 const filterSource = document.getElementById("chart-filter-source");
@@ -50,7 +51,7 @@ let currentTxStatus = "pending";
 let currentCategory = ""; // For context-aware quick add
 
 // Bootstrap Modal Instances
-let detailsModal, editModal, alertModal, mainRecordModal;
+let detailsModal, editModal, alertModal, mainRecordModal, calculator;
 
 document.addEventListener('DOMContentLoaded', () => {
     const detailsEl = document.getElementById('tx-details-modal');
@@ -62,6 +63,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editEl) editModal = new bootstrap.Modal(editEl);
     if (alertEl) alertModal = new bootstrap.Modal(alertEl);
     if (addEl) mainRecordModal = new bootstrap.Modal(addEl);
+    calculator = new Calculator();
+
+    // Calculator button listener
+    const openCalcBtn = document.getElementById('open-calc-btn');
+    if (openCalcBtn) {
+        openCalcBtn.onclick = () => {
+            calculator.open(inputAmount.value || 0, (result) => {
+                inputAmount.value = result;
+            });
+        };
+    }
 });
 
 const CATEGORIES = ["Grocery", "Pets", "Fuel", "Dining", "LIC/OICL", "Travel", "Entertainment", "Utility Bills", "Rent", "Other"];

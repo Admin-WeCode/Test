@@ -1,10 +1,11 @@
 import { subscribeToItems, updateItem, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction, addTransaction } from "./firebase-service.js";
+import { Calculator } from "./calculator.js";
 
 const listContainer = document.getElementById("items-list");
 const loadingIndicator = document.getElementById("loading");
 
 // Bootstrap Modal Instances
-let txModal, txEditModal, alertModal, mainRecordModal;
+let txModal, txEditModal, alertModal, mainRecordModal, calculator;
 
 document.addEventListener('DOMContentLoaded', () => {
     const txModalEl = document.getElementById('transactions-modal');
@@ -16,6 +17,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (txEditModalEl) txEditModal = new bootstrap.Modal(txEditModalEl);
     if (alertModalEl) alertModal = new bootstrap.Modal(alertModalEl);
     if (mainRecordModalEl) mainRecordModal = new bootstrap.Modal(mainRecordModalEl);
+    calculator = new Calculator();
+
+    // Calculator button listener
+    const openCalcBtn = document.getElementById('open-calc-btn');
+    if (openCalcBtn) {
+        openCalcBtn.onclick = () => {
+            calculator.open(inputAmount.value || 0, (result) => {
+                inputAmount.value = result;
+            });
+        };
+    }
 });
 
 // Selectors for Modal Elements

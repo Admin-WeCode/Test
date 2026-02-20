@@ -95,10 +95,13 @@
                                     <select class="form-select" id="input-category" required></select>
                                     <label for="input-category">Category</label>
                                 </div>
-                                <div class="form-floating mb-3">
+                                <div class="form-floating mb-3 amount-input-group">
                                     <input type="number" class="form-control" id="input-amount" placeholder="Amount"
                                         step="0.01" required>
                                     <label for="input-amount">Amount</label>
+                                    <button type="button" class="btn btn-calc" id="open-calc-btn">
+                                        <span class="material-icons">calculate</span>
+                                    </button>
                                 </div>
                                 <div class="form-floating mb-3">
                                     <textarea class="form-control" id="input-comment" style="height: 100px"
@@ -248,6 +251,46 @@
                                     data-bs-dismiss="modal">OK</button>
                                 <button id="alert-cancel-btn" class="btn btn-light px-4 py-2 rounded-pill"
                                     style="display: none;" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculator Modal -->
+            <div class="modal fade" id="calc-modal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header border-0 pb-0 px-4 pt-4">
+                            <h5 class="modal-title fw-bold">Calculator</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="calc-display" id="calc-display">0</div>
+                            <div class="calc-grid">
+                                <button type="button" class="calc-btn calc-btn-clear" data-calc="C">C</button>
+                                <button type="button" class="calc-btn calc-btn-operator" data-calc="DEL">⌫</button>
+                                <button type="button" class="calc-btn calc-btn-operator" data-calc="/">÷</button>
+                                <button type="button" class="calc-btn calc-btn-operator" data-calc="*">×</button>
+
+                                <button type="button" class="calc-btn" data-calc="7">7</button>
+                                <button type="button" class="calc-btn" data-calc="8">8</button>
+                                <button type="button" class="calc-btn" data-calc="9">9</button>
+                                <button type="button" class="calc-btn calc-btn-operator" data-calc="-">−</button>
+
+                                <button type="button" class="calc-btn" data-calc="4">4</button>
+                                <button type="button" class="calc-btn" data-calc="5">5</button>
+                                <button type="button" class="calc-btn" data-calc="6">6</button>
+                                <button type="button" class="calc-btn calc-btn-operator" data-calc="+">+</button>
+
+                                <button type="button" class="calc-btn" data-calc="1">1</button>
+                                <button type="button" class="calc-btn" data-calc="2">2</button>
+                                <button type="button" class="calc-btn" data-calc="3">3</button>
+                                <button type="button" class="calc-btn calc-btn-operator" data-calc="=">=</button>
+
+                                <button type="button" class="calc-btn" data-calc="0">0</button>
+                                <button type="button" class="calc-btn" data-calc=".">.</button>
+                                <button type="button" class="calc-btn calc-btn-submit" id="calc-submit">Submit</button>
                             </div>
                         </div>
                     </div>

@@ -1,4 +1,5 @@
 import { subscribeToItems, addTransaction, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction } from "./firebase-service.js";
+import { Calculator } from "./calculator.js";
 
 const form = document.getElementById("add-form");
 const loadingIndicator = document.getElementById("loading");
@@ -63,13 +64,24 @@ const alertOkBtn = document.getElementById("alert-ok-btn");
 const alertCancelBtn = document.getElementById("alert-cancel-btn");
 
 // Bootstrap Modal Instances
-let mainModal, txModal, txEditModal, alertModal;
+let mainModal, txModal, txEditModal, alertModal, calculator;
 
 document.addEventListener('DOMContentLoaded', () => {
     mainModal = new bootstrap.Modal(document.getElementById('expense-modal'));
     txModal = new bootstrap.Modal(document.getElementById('transactions-modal'));
     txEditModal = new bootstrap.Modal(document.getElementById('tx-edit-modal'));
     alertModal = new bootstrap.Modal(document.getElementById('alert-modal'));
+    calculator = new Calculator();
+
+    // Calculator button listener
+    const openCalcBtn = document.getElementById('open-calc-btn');
+    if (openCalcBtn) {
+        openCalcBtn.onclick = () => {
+            calculator.open(inputAmount.value || 0, (result) => {
+                inputAmount.value = result;
+            });
+        };
+    }
 });
 
 function showNotification(message, isConfirmation = false, onConfirmCallback = null) {

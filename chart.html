@@ -166,6 +166,9 @@
                                 <button type="button" class="btn btn-calc" id="open-calc-btn">
                                     <span class="material-icons">calculate</span>
                                 </button>
+                                <button type="button" class="btn btn-add-multi" id="open-multi-adder-btn">
+                                    <span class="material-icons">add_circle</span>
+                                </button>
                             </div>
                             <div class="form-floating mb-3">
                                 <textarea class="form-control" id="input-comment" style="height: 100px"
@@ -260,6 +263,34 @@
                             <button id="alert-cancel-btn" class="btn btn-outline-secondary px-4 rounded-pill"
                                 style="display: none;">Cancel</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multi-Adder Modal -->
+        <div class="modal fade" id="multi-adder-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 px-4 pt-4">
+                        <h5 class="modal-title fw-bold">Multi-Item Adder</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body px-4">
+                        <div id="multi-adder-container">
+                            <!-- Dynamic rows will be added here -->
+                        </div>
+                        <button type="button" class="btn btn-outline-primary w-100 mb-3" id="add-item-row-btn">
+                            <span class="material-icons align-middle me-1">add</span> Add Item
+                        </button>
+                        <div class="multi-adder-total">
+                            Total: ₹<span id="multi-adder-total-val">0</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 px-4 pb-4">
+                        <button type="button" class="btn btn-light w-100 mb-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary w-100" id="multi-adder-submit">Submit
+                            breakdown</button>
                     </div>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 import { subscribeToItems, fetchAllTransactions, updateTransaction, deleteTransaction, moveTransaction, addTransaction } from "./firebase-service.js";
 import { Calculator } from "./calculator.js";
+import { MultiAdder } from "./multi-adder.js";
 
 // DOM Selectors with safety checks
 const filterSource = document.getElementById("chart-filter-source");
@@ -51,7 +52,7 @@ let currentTxStatus = "pending";
 let currentCategory = ""; // For context-aware quick add
 
 // Bootstrap Modal Instances
-let detailsModal, editModal, alertModal, mainRecordModal, calculator;
+let detailsModal, editModal, alertModal, mainRecordModal, calculator, multiAdder;
 
 document.addEventListener('DOMContentLoaded', () => {
     const detailsEl = document.getElementById('tx-details-modal');
@@ -64,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (alertEl) alertModal = new bootstrap.Modal(alertEl);
     if (addEl) mainRecordModal = new bootstrap.Modal(addEl);
     calculator = new Calculator();
+    multiAdder = new MultiAdder();
 
     // Calculator button listener
     const openCalcBtn = document.getElementById('open-calc-btn');
@@ -71,6 +73,17 @@ document.addEventListener('DOMContentLoaded', () => {
         openCalcBtn.onclick = () => {
             calculator.open(inputAmount.value || 0, (result) => {
                 inputAmount.value = result;
+            });
+        };
+    }
+
+    // Multi-Adder button listener
+    const openMultiAdderBtn = document.getElementById('open-multi-adder-btn');
+    if (openMultiAdderBtn) {
+        openMultiAdderBtn.onclick = () => {
+            multiAdder.open(({ totalAmount, comment }) => {
+                if (inputAmount) inputAmount.value = totalAmount;
+                if (inputComment) inputComment.value = comment;
             });
         };
     }

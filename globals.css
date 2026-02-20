@@ -107,7 +107,8 @@ body {
 
 /* Calculator Modal Styles */
 #calc-modal {
-    z-index: 1060; /* Higher than normal modal (1055) */
+    z-index: 1060;
+    /* Higher than normal modal (1055) */
 }
 
 .calc-display {
@@ -169,7 +170,6 @@ body {
 /* Input group alignment for calculator icon */
 .amount-input-group {
     display: flex;
-    width: 80% !important; /* Reduce size of amount field by 20% */
 }
 
 .amount-input-group .form-control {
@@ -194,4 +194,50 @@ body {
 .amount-input-group .btn-calc:hover {
     background: #f8f9fa;
     color: var(--md-primary);
+}
+
+.amount-input-group .btn-add-multi {
+    border: 1px solid #ced4da;
+    border-left: none;
+    background: white;
+    color: var(--md-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+}
+
+.amount-input-group .btn-add-multi:hover {
+    background: #f8f9fa;
+    color: var(--md-success);
+}
+
+/* Multi-Adder Modal Styles */
+#multi-adder-modal {
+    z-index: 1061;
+    /* Higher than calculator (1060) */
+}
+
+.multi-adder-row {
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+}
+
+.multi-adder-row:hover {
+    border-color: var(--md-primary);
+}
+
+.multi-adder-total {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--md-primary);
+    text-align: right;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #eef2f7;
+    border-radius: 8px;
 }

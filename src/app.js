@@ -1,5 +1,6 @@
 import { subscribeToItems, addTransaction, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction } from "./firebase-service.js";
 import { Calculator } from "./calculator.js";
+import { MultiAdder } from "./multi-adder.js";
 
 const form = document.getElementById("add-form");
 const loadingIndicator = document.getElementById("loading");
@@ -64,7 +65,7 @@ const alertOkBtn = document.getElementById("alert-ok-btn");
 const alertCancelBtn = document.getElementById("alert-cancel-btn");
 
 // Bootstrap Modal Instances
-let mainModal, txModal, txEditModal, alertModal, calculator;
+let mainModal, txModal, txEditModal, alertModal, calculator, multiAdder;
 
 document.addEventListener('DOMContentLoaded', () => {
     mainModal = new bootstrap.Modal(document.getElementById('expense-modal'));
@@ -72,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     txEditModal = new bootstrap.Modal(document.getElementById('tx-edit-modal'));
     alertModal = new bootstrap.Modal(document.getElementById('alert-modal'));
     calculator = new Calculator();
+    multiAdder = new MultiAdder();
 
     // Calculator button listener
     const openCalcBtn = document.getElementById('open-calc-btn');
@@ -79,6 +81,17 @@ document.addEventListener('DOMContentLoaded', () => {
         openCalcBtn.onclick = () => {
             calculator.open(inputAmount.value || 0, (result) => {
                 inputAmount.value = result;
+            });
+        };
+    }
+
+    // Multi-Adder button listener
+    const openMultiAdderBtn = document.getElementById('open-multi-adder-btn');
+    if (openMultiAdderBtn) {
+        openMultiAdderBtn.onclick = () => {
+            multiAdder.open(({ totalAmount, comment }) => {
+                inputAmount.value = totalAmount;
+                inputComment.value = comment;
             });
         };
     }

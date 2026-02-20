@@ -213,28 +213,43 @@ async function openAllTransactionsModal() {
         txUnsubscribe = null;
     }
 
+    await fetchAndRenderGlobalTransactions(true);
+}
+
+async function fetchAndRenderGlobalTransactions(resetFilters = false) {
     try {
         currentTransactions = await fetchAllTransactions(ALL_SOURCE_IDS);
 
         // Sorting by date descending as requested
         currentTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Save current selections if not resetting
+        const prevMonth = filterMonth ? filterMonth.value : null;
+        const prevOwner = filterOwner ? filterOwner.value : null;
+
         populateMonthFilter(currentTransactions);
 
-        // Initialize multi-select sources
-        selectedSources = new Set(ALL_SOURCE_IDS);
-        renderSourceFilter();
-
-        // Default Filters
-        if (filterOwner) filterOwner.value = "Home";
-        if (filterMonth) {
-            const now = new Date().toISOString().substring(0, 7);
-            filterMonth.value = filterMonth.querySelector(`option[value="${now}"]`) ? now : "All";
+        if (resetFilters) {
+            selectedSources = new Set(ALL_SOURCE_IDS);
+            if (filterOwner) filterOwner.value = "Home";
+            if (filterMonth) {
+                const now = new Date().toISOString().substring(0, 7);
+                filterMonth.value = filterMonth.querySelector(`option[value="${now}"]`) ? now : "All";
+            }
+        } else {
+            // Restore selections if possible
+            if (prevOwner && filterOwner) filterOwner.value = prevOwner;
+            if (prevMonth && filterMonth) {
+                const exists = Array.from(filterMonth.options).some(opt => opt.value === prevMonth);
+                if (exists) filterMonth.value = prevMonth;
+            }
         }
 
+        renderSourceFilter();
         renderTransactions();
     } catch (err) {
         console.error("Failed to fetch all transactions:", err);
-        txListContainer.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-danger">Failed to load transactions from all sources.</td></tr>';
+        txListContainer.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-danger">Failed to load transactions.</td></tr>';
     }
 }
 
@@ -480,7 +495,7 @@ form.onsubmit = async (e) => {
         form.reset();
         modals['expense-modal'].hide();
         document.getElementById("input-date").valueAsDate = new Date();
-        if (currentSourceId === "All") openAllTransactionsModal(); // Refresh global view
+        if (currentSourceId === "All") fetchAndRenderGlobalTransactions(false); // Preserve filters
     } catch (error) {
         showNotification("Failed to add transaction.");
     }
@@ -508,7 +523,7 @@ txEditForm.onsubmit = async (e) => {
             await updateTransaction(currentSourceIdForEdit, editingTransactionId, updatedData);
             showNotification("Updated!");
             modals['tx-edit-modal'].hide();
-            if (currentSourceId === "All") openAllTransactionsModal(); // Refresh global view
+            if (currentSourceId === "All") fetchAndRenderGlobalTransactions(false); // Preserve filters
         }
     } catch (err) {
         showNotification("Failed to save changes.");
@@ -521,7 +536,7 @@ deleteTxBtn.onclick = () => {
             await deleteTransaction(currentSourceIdForEdit, editingTransactionId);
             showNotification("Deleted!");
             modals['tx-edit-modal'].hide();
-            if (currentSourceId === "All") openAllTransactionsModal(); // Refresh global view
+            if (currentSourceId === "All") fetchAndRenderGlobalTransactions(false); // Preserve filters
         } catch (err) {
             showNotification("Failed to delete.");
         }
@@ -532,13 +547,15 @@ markPaidBtn.onclick = () => {
     const action = markPaidBtn.dataset.action;
     const ownerFilter = filterOwner.value;
     const monthFilter = filterMonth.value;
+    const isGlobal = currentSourceId === "All";
 
     // Group transactions by sourceId for bulk update
     const sourceGroups = {};
     currentTransactions
         .filter(tx =>
             (ownerFilter === "All" || tx.owners === ownerFilter) &&
-            (monthFilter === "All" || (tx.date && tx.date.startsWith(monthFilter)))
+            (monthFilter === "All" || (tx.date && tx.date.startsWith(monthFilter))) &&
+            (!isGlobal || selectedSources.has(tx.sourceId))
         )
         .forEach(tx => {
             if (!sourceGroups[tx.sourceId]) sourceGroups[tx.sourceId] = [];
@@ -551,7 +568,7 @@ markPaidBtn.onclick = () => {
         await Promise.all(Object.entries(sourceGroups).map(([sid, ids]) =>
             bulkUpdateTransactionStatus(sid, ids, action)
         ));
-        if (currentSourceId === "All") openAllTransactionsModal();
+        if (currentSourceId === "All") await fetchAndRenderGlobalTransactions(false);
     });
 };
 

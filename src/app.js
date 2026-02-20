@@ -1,7 +1,9 @@
 import { subscribeToItems, addTransaction, subscribeToTransactions, updateTransactionStatus, bulkUpdateTransactionStatus, updateTransaction, deleteTransaction, moveTransaction } from "./firebase-service.js";
 import { Calculator } from "./calculator.js";
 import { MultiAdder } from "./multi-adder.js";
-import { CATEGORIES, setupNotification, initCommonModals, setupUtilityButtons, populateSelect } from "./ui-utils.js";
+import { CATEGORIES, setupNotification, initCommonModals, setupUtilityButtons, populateSelect, injectSharedModals } from "./ui-utils.js";
+
+injectSharedModals();
 
 const form = document.getElementById("add-form");
 const loadingIndicator = document.getElementById("loading");

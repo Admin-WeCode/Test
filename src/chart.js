@@ -1,7 +1,9 @@
 import { subscribeToItems, fetchAllTransactions, updateTransaction, deleteTransaction, moveTransaction, addTransaction } from "./firebase-service.js";
 import { Calculator } from "./calculator.js";
 import { MultiAdder } from "./multi-adder.js";
-import { CATEGORIES, setupNotification, initCommonModals, setupUtilityButtons, populateSelect } from "./ui-utils.js";
+import { CATEGORIES, setupNotification, initCommonModals, setupUtilityButtons, populateSelect, injectSharedModals } from "./ui-utils.js";
+
+injectSharedModals();
 
 // DOM Selectors with safety checks
 const filterSource = document.getElementById("chart-filter-source");
@@ -12,9 +14,9 @@ const masterCb = document.getElementById("master-category-cb");
 const noDataMsg = document.getElementById("no-data-msg");
 
 // Modal Selectors
-const txDetailsModal = document.getElementById("tx-details-modal");
-const txModalTitle = document.getElementById("details-title");
-const txModalBody = document.getElementById("modal-tbody");
+const txDetailsModal = document.getElementById("transactions-modal");
+const txModalTitle = document.getElementById("transactions-title");
+const txModalBody = document.getElementById("transactions-list");
 
 const txEditForm = document.getElementById("tx-edit-form");
 const deleteTxBtn = document.getElementById("delete-tx-btn");
@@ -57,7 +59,7 @@ let modals = {};
 let calculator, multiAdder, showNotification;
 
 document.addEventListener('DOMContentLoaded', () => {
-    modals = initCommonModals(['tx-details-modal', 'tx-edit-modal', 'alert-modal', 'expense-modal']);
+    modals = initCommonModals(['transactions-modal', 'tx-edit-modal', 'alert-modal', 'expense-modal']);
     calculator = new Calculator();
     multiAdder = new MultiAdder();
 
@@ -187,7 +189,7 @@ function showTransactionsModal(category) {
             txModalBody.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No records matching filters.</td></tr>';
         }
     }
-    if (modals['tx-details-modal']) modals['tx-details-modal'].show();
+    if (modals['transactions-modal']) modals['transactions-modal'].show();
 }
 
 function openEditModal(tx) {
@@ -396,7 +398,7 @@ if (txEditForm) {
                 await moveTransaction(currentSourceId, newSourceId, editingTransactionId, updatedData);
                 showNotification("Moved & Updated!");
                 if (modals['tx-edit-modal']) modals['tx-edit-modal'].hide();
-                if (modals['tx-details-modal']) modals['tx-details-modal'].hide();
+                if (modals['transactions-modal']) modals['transactions-modal'].hide();
             } else {
                 await updateTransaction(currentSourceId, editingTransactionId, updatedData);
                 showNotification("Updated!");
@@ -415,7 +417,7 @@ if (deleteTxBtn) {
             await deleteTransaction(currentSourceId, editingTransactionId);
             showNotification("Deleted!");
             if (modals['tx-edit-modal']) modals['tx-edit-modal'].hide();
-            if (modals['tx-details-modal']) modals['tx-details-modal'].hide(); // Hide the list modal too as it might be stale
+            if (modals['transactions-modal']) modals['transactions-modal'].hide(); // Hide the list modal too as it might be stale
             refreshData();
         } catch (err) {
             showNotification("Failed to delete.");

@@ -76,3 +76,24 @@ export function populateSelect(selectEl, options, placeholder = null, placeholde
     html += options.map(opt => `<option value="${opt}">${opt}</option>`).join("");
     selectEl.innerHTML = html;
 }
+
+/**
+ * Inject shared modals into the page
+ */
+import * as templates from "./modal-templates.js";
+export function injectSharedModals() {
+    let container = document.getElementById('shared-modals-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'shared-modals-container';
+        document.body.appendChild(container);
+    }
+
+    container.innerHTML =
+        templates.EXPENSE_MODAL_HTML +
+        templates.TX_EDIT_MODAL_HTML +
+        templates.ALERT_MODAL_HTML +
+        templates.MULTI_ADDER_MODAL_HTML +
+        templates.CALC_MODAL_HTML +
+        templates.TRANSACTIONS_LIST_MODAL_HTML;
+}

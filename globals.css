@@ -107,8 +107,8 @@ body {
 
 /* Calculator Modal Styles */
 #calc-modal {
-    z-index: 1060;
-    /* Higher than normal modal (1055) */
+    z-index: 1080;
+    /* Higher than action modals (1070) */
 }
 
 .calc-display {
@@ -214,8 +214,23 @@ body {
 
 /* Multi-Adder Modal Styles */
 #multi-adder-modal {
-    z-index: 1061;
-    /* Higher than calculator (1060) */
+    z-index: 1081;
+    /* Higher than calculator (1080) */
+}
+
+/* Modal Stacking Hierarchy */
+#transactions-modal,
+#tx-details-modal {
+    z-index: 1055;
+}
+
+#expense-modal,
+#tx-edit-modal {
+    z-index: 1070;
+}
+
+#alert-modal {
+    z-index: 1100;
 }
 
 .multi-adder-row {

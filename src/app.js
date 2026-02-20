@@ -32,6 +32,7 @@ const markPaidBtn = document.getElementById("mark-paid-btn");
 const multiSourceFilter = document.getElementById("multi-source-filter");
 const modalTotalFooter = document.getElementById("modal-total-footer");
 const grandTotalVal = document.getElementById("grand-total-val");
+const paidTotalVal = document.getElementById("paid-total-val");
 const outstandingTotalVal = document.getElementById("outstanding-total-val");
 
 let txUnsubscribe = null;
@@ -369,6 +370,11 @@ function renderTransactions() {
     // Calculate Grand Total
     const total = filtered.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
     if (grandTotalVal) grandTotalVal.innerText = `₹${total.toLocaleString()}`;
+
+    // Calculate Paid Total
+    const paid = filtered.filter(tx => tx.status === "paid")
+        .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    if (paidTotalVal) paidTotalVal.innerText = `₹${paid.toLocaleString()}`;
 
     // Calculate Outstanding Total (Unpaid)
     const outstanding = filtered.filter(tx => tx.status !== "paid")

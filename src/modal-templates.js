@@ -245,6 +245,10 @@ export const TRANSACTIONS_LIST_MODAL_HTML = `
                         <span id="grand-total-val" class="fw-bold fs-4 text-primary">₹0</span>
                     </div>
                     <div>
+                        <span class="text-muted fw-bold text-uppercase small me-2">Paid:</span>
+                        <span id="paid-total-val" class="fw-bold fs-4 text-success">₹0</span>
+                    </div>
+                    <div>
                         <span class="text-muted fw-bold text-uppercase small me-2">Outstanding:</span>
                         <span id="outstanding-total-val" class="fw-bold fs-4 text-danger">₹0</span>
                     </div>

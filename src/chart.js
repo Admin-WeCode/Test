@@ -174,6 +174,7 @@ function showTransactionsModal(category) {
     const multiSourceFilter = document.getElementById("multi-source-filter");
     const modalTotalFooter = document.getElementById("modal-total-footer");
     const grandTotalVal = document.getElementById("grand-total-val");
+    const paidTotalVal = document.getElementById("paid-total-val");
     const outstandingTotalVal = document.getElementById("outstanding-total-val");
 
     if (multiSourceFilter) multiSourceFilter.style.display = 'none'; // Categories view uses its own chart filters
@@ -197,10 +198,13 @@ function showTransactionsModal(category) {
 
         // Update Totals in Footer
         const total = filtered.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+        const paid = filtered.filter(tx => tx.status === "paid")
+            .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
         const outstanding = filtered.filter(tx => tx.status !== "paid")
             .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 
         if (grandTotalVal) grandTotalVal.innerText = `₹${total.toLocaleString()}`;
+        if (paidTotalVal) paidTotalVal.innerText = `₹${paid.toLocaleString()}`;
         if (outstandingTotalVal) outstandingTotalVal.innerText = `₹${outstanding.toLocaleString()}`;
 
         document.querySelectorAll(".tx-row").forEach(row => {
@@ -245,6 +249,7 @@ if (modalAddBtn) {
 const refreshData = async () => {
     allTransactions = await fetchAllTransactions(sourceIds);
     renderChart();
+    if (currentCategory) showTransactionsModal(currentCategory);
 };
 
 // showNotification defined via setupNotification in DOMContentLoaded

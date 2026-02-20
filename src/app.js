@@ -29,10 +29,16 @@ const txTitle = document.getElementById("transactions-title");
 const filterOwner = document.getElementById("filter-owner");
 const filterMonth = document.getElementById("filter-month");
 const markPaidBtn = document.getElementById("mark-paid-btn");
+const multiSourceFilter = document.getElementById("multi-source-filter");
+const modalTotalFooter = document.getElementById("modal-total-footer");
+const grandTotalVal = document.getElementById("grand-total-val");
+const outstandingTotalVal = document.getElementById("outstanding-total-val");
+
 let txUnsubscribe = null;
 let currentTransactions = [];
 let currentSourceId = null;
 let ALL_SOURCE_IDS = []; // Track all source IDs for editing
+let selectedSources = new Set();
 
 // Edit Transaction Form Selectors
 const txEditForm = document.getElementById("tx-edit-form");
@@ -173,6 +179,8 @@ function openTransactionsModal(sourceId) {
     // Toggle Source column off
     const sourceCols = document.querySelectorAll('.col-source');
     sourceCols.forEach(el => el.style.display = 'none');
+    if (multiSourceFilter) multiSourceFilter.style.display = 'none';
+    if (modalTotalFooter) modalTotalFooter.style.display = 'none';
 
     filterOwner.value = "All";
     filterMonth.innerHTML = '<option value="All">All Months</option>';
@@ -194,9 +202,11 @@ async function openAllTransactionsModal() {
 
     modals['transactions-modal'].show();
 
-    // Toggle Source column on
+    // UI Toggles for Global View
     const sourceCols = document.querySelectorAll('.col-source');
     sourceCols.forEach(el => el.style.display = '');
+    if (multiSourceFilter) multiSourceFilter.style.display = '';
+    if (modalTotalFooter) modalTotalFooter.style.display = '';
 
     if (txUnsubscribe) {
         txUnsubscribe();
@@ -206,8 +216,13 @@ async function openAllTransactionsModal() {
     try {
         currentTransactions = await fetchAllTransactions(ALL_SOURCE_IDS);
 
-        // Sorting and filtering
+        // Sorting by date descending as requested
+        currentTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         populateMonthFilter(currentTransactions);
+
+        // Initialize multi-select sources
+        selectedSources = new Set(ALL_SOURCE_IDS);
+        renderSourceFilter();
 
         // Default Filters
         if (filterOwner) filterOwner.value = "Home";
@@ -221,6 +236,73 @@ async function openAllTransactionsModal() {
         console.error("Failed to fetch all transactions:", err);
         txListContainer.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-danger">Failed to load transactions from all sources.</td></tr>';
     }
+}
+
+function renderSourceFilter() {
+    if (!multiSourceFilter) return;
+    multiSourceFilter.innerHTML = `
+        <div class="dropdown w-100">
+            <button class="btn btn-white border shadow-sm dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                <span class="text-truncate">Sources (${selectedSources.size})</span>
+            </button>
+            <ul class="dropdown-menu shadow-lg w-100 py-2">
+                <li>
+                    <div class="dropdown-item py-1">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="source-all" ${selectedSources.size === ALL_SOURCE_IDS.length ? 'checked' : ''}>
+                            <label class="form-check-label fw-bold" for="source-all">Select All</label>
+                        </div>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    ${ALL_SOURCE_IDS.map(id => `
+                        <li>
+                            <div class="dropdown-item py-1">
+                                <div class="form-check">
+                                    <input class="form-check-input source-cb" type="checkbox" value="${id}" id="src-${id}" ${selectedSources.has(id) ? 'checked' : ''}>
+                                    <label class="form-check-label" for="src-${id}">${id}</label>
+                                </div>
+                            </div>
+                        </li>
+                    `).join("")}
+                </div>
+            </ul>
+        </div>
+    `;
+
+    // Listeners
+    const allCb = document.getElementById("source-all");
+    const sourceCbs = document.querySelectorAll(".source-cb");
+
+    if (allCb) {
+        allCb.onchange = (e) => {
+            if (e.target.checked) {
+                ALL_SOURCE_IDS.forEach(id => selectedSources.add(id));
+            } else {
+                selectedSources.clear();
+            }
+            sourceCbs.forEach(cb => cb.checked = e.target.checked);
+            updateSourceFilterLabel();
+            renderTransactions();
+        };
+    }
+
+    sourceCbs.forEach(cb => {
+        cb.onchange = (e) => {
+            if (e.target.checked) selectedSources.add(e.target.value);
+            else selectedSources.delete(e.target.value);
+            if (allCb) allCb.checked = selectedSources.size === ALL_SOURCE_IDS.length;
+            updateSourceFilterLabel();
+            renderTransactions();
+        };
+    });
+}
+
+function updateSourceFilterLabel() {
+    if (!multiSourceFilter) return;
+    const label = multiSourceFilter.querySelector(".text-truncate");
+    if (label) label.innerText = `Sources (${selectedSources.size})`;
 }
 
 // Quick-Add button in transactions modal
@@ -255,14 +337,28 @@ function populateMonthFilter(transactions) {
 function renderTransactions() {
     const ownerFilter = filterOwner.value;
     const monthFilter = filterMonth.value;
+    const isGlobal = currentSourceId === "All";
+
     const filtered = currentTransactions.filter(tx =>
         (ownerFilter === "All" || tx.owners === ownerFilter) &&
-        (monthFilter === "All" || (tx.date && tx.date.startsWith(monthFilter)))
+        (monthFilter === "All" || (tx.date && tx.date.startsWith(monthFilter))) &&
+        (!isGlobal || selectedSources.has(tx.sourceId))
     );
 
+    // Sorting by date (fallback if not already sorted)
+    filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
     txListContainer.innerHTML = "";
-    const isGlobal = currentSourceId === "All";
     const colCount = isGlobal ? 6 : 5;
+
+    // Calculate Grand Total
+    const total = filtered.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    if (grandTotalVal) grandTotalVal.innerText = `₹${total.toLocaleString()}`;
+
+    // Calculate Outstanding Total (Unpaid)
+    const outstanding = filtered.filter(tx => tx.status !== "paid")
+        .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    if (outstandingTotalVal) outstandingTotalVal.innerText = `₹${outstanding.toLocaleString()}`;
 
     if (filtered.length === 0) {
         txListContainer.innerHTML = `<tr><td colspan="${colCount}" class="text-center p-5 text-muted">No transactions found.</td></tr>`;
@@ -271,8 +367,8 @@ function renderTransactions() {
         markPaidBtn.disabled = false;
         const allPaid = filtered.every(tx => tx.status === "paid");
         markPaidBtn.innerHTML = allPaid ?
-            `<span class="material-icons me-1">history</span> Mark All as Unpaid` :
-            `<span class="material-icons me-1">check_circle</span> Mark All as Paid`;
+            `<span class="material-icons me-1">history</span> Mark All` :
+            `<span class="material-icons me-1">check_circle</span> Mark All`;
 
         markPaidBtn.classList.remove("btn-success", "btn-warning");
         markPaidBtn.classList.add(allPaid ? "btn-warning" : "btn-success");

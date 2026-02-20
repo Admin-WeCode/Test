@@ -200,8 +200,8 @@ export const TRANSACTIONS_LIST_MODAL_HTML = `
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row g-2 mb-4 filters-row">
-                    <div class="col-md-3">
+                <div class="row g-2 mb-4 filters-row align-items-center" style="position: relative; z-index: 1030;">
+                    <div class="col-md-2">
                         <select id="filter-owner" class="form-select shadow-sm">
                             <option value="All">All Owners</option>
                             <option value="Home">Home</option>
@@ -213,15 +213,18 @@ export const TRANSACTIONS_LIST_MODAL_HTML = `
                             <option value="All">All Months</option>
                         </select>
                     </div>
-                    <div class="col-md-6 d-flex">
+                    <div id="multi-source-filter" class="col-md-4" style="display:none">
+                        <!-- Multi-select Source Filter injected here -->
+                    </div>
+                    <div class="col d-flex">
                         <button id="mark-paid-btn" class="btn btn-success ms-auto d-flex align-items-center">
-                            <span class="material-icons me-1">check_circle</span> Mark All as Paid
+                            <span class="material-icons me-1">check_circle</span> Mark All
                         </button>
                     </div>
                 </div>
-                <div class="table-responsive">
+                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
                     <table class="table table-hover align-middle">
-                        <thead>
+                        <thead class="sticky-top bg-white shadow-sm">
                             <tr>
                                 <th>Date</th>
                                 <th class="col-source" style="display:none">Source</th>
@@ -233,6 +236,18 @@ export const TRANSACTIONS_LIST_MODAL_HTML = `
                         </thead>
                         <tbody id="transactions-list"></tbody>
                     </table>
+                </div>
+            </div>
+            <div id="modal-total-footer" class="modal-footer border-0 bg-light py-3 px-4 shadow-sm" style="display:none">
+                <div class="w-100 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted fw-bold text-uppercase small me-2">Grand Total:</span>
+                        <span id="grand-total-val" class="fw-bold fs-4 text-primary">₹0</span>
+                    </div>
+                    <div>
+                        <span class="text-muted fw-bold text-uppercase small me-2">Outstanding:</span>
+                        <span id="outstanding-total-val" class="fw-bold fs-4 text-danger">₹0</span>
+                    </div>
                 </div>
             </div>
         </div>

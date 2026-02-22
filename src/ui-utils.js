@@ -1,4 +1,16 @@
-export const CATEGORIES = ["Grocery", "Pets", "Fuel", "Dining", "LIC/OICL", "Travel", "Entertainment", "Utility Bills", "Rent", "Other"];
+export const CATEGORIES = [
+    "Dining",
+    "Entertainment",
+    "Fuel",
+    "Grocery",
+    "LIC/OICL",
+    "Medicine",
+    "Pets",
+    "Rent",
+    "Shopping",
+    "Travel",
+    "Utility Bills",
+    "Other"];
 
 /**
  * Shared notification helper using the alert modal

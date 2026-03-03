@@ -77,6 +77,22 @@
             box-shadow: 0 12px 25px rgba(52, 152, 219, 0.4);
         }
 
+        .unpaid-badge {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 8px 20px rgba(243, 156, 18, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .unpaid-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(243, 156, 18, 0.35);
+        }
+
         .filter-select {
             border-radius: 14px;
             padding: 12px 20px;
@@ -134,10 +150,22 @@
                     owner is <strong>Home</strong>
                 </p>
             </div>
-            <div class="d-flex align-items-center">
-                <div class="total-badge d-flex align-items-center">
-                    <span class="material-icons me-2">account_balance_wallet</span>
-                    <span id="total-amount">₹0</span>
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex flex-column align-items-end">
+                    <span class="text-muted small fw-bold text-uppercase mb-1"
+                        style="font-size: 0.65rem; letter-spacing: 1px;">Total Out</span>
+                    <div class="total-badge d-flex align-items-center">
+                        <span class="material-icons me-2" style="font-size: 1.2rem;">account_balance_wallet</span>
+                        <span id="total-amount">₹0</span>
+                    </div>
+                </div>
+                <div class="d-flex flex-column align-items-end">
+                    <span class="text-muted small fw-bold text-uppercase mb-1"
+                        style="font-size: 0.65rem; letter-spacing: 1px;">Outstanding</span>
+                    <div class="unpaid-badge d-flex align-items-center">
+                        <span class="material-icons me-2" style="font-size: 1.2rem;">pending_actions</span>
+                        <span id="unpaid-amount">₹0</span>
+                    </div>
                 </div>
             </div>
         </div>

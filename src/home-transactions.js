@@ -3,6 +3,7 @@ import { subscribeToItems, fetchAllTransactions } from "./firebase-service.js";
 const txListContainer = document.getElementById("transactions-list");
 const filterMonth = document.getElementById("filter-month");
 const totalAmountEl = document.getElementById("total-amount");
+const unpaidAmountEl = document.getElementById("unpaid-amount");
 
 let ALL_SOURCE_IDS = [];
 let currentTransactions = [];
@@ -69,16 +70,21 @@ function renderTransactions() {
 
     txListContainer.innerHTML = "";
     let total = 0;
+    let unpaidTotal = 0;
 
     if (filtered.length === 0) {
         txListContainer.innerHTML = '<tr><td colspan="5" class="text-center p-5 text-muted">No transactions found for this period.</td></tr>';
         totalAmountEl.innerText = "₹0";
+        unpaidAmountEl.innerText = "₹0";
         return;
     }
 
     filtered.forEach(tx => {
         const amt = Number(tx.amount) || 0;
         total += amt;
+        if (tx.status !== "paid") {
+            unpaidTotal += amt;
+        }
         const row = document.createElement("tr");
         row.className = "animate-fade-in";
 
@@ -101,6 +107,7 @@ function renderTransactions() {
     });
 
     totalAmountEl.innerText = `₹${total.toLocaleString()}`;
+    unpaidAmountEl.innerText = `₹${unpaidTotal.toLocaleString()}`;
 }
 
 filterMonth.onchange = renderTransactions;

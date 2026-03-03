@@ -51,11 +51,13 @@ function populateMonthFilter(transactions) {
         filterMonth.appendChild(option);
     });
 
-    if (currentVal && Array.from(filterMonth.options).some(o => o.value === currentVal)) {
+    // Selection Priority Logic:
+    if (currentVal && currentVal !== "All" && Array.from(filterMonth.options).some(o => o.value === currentVal)) {
         filterMonth.value = currentVal;
     } else if (Array.from(filterMonth.options).some(o => o.value === nowMonth)) {
-        // Default to current month if available and no previous selection
         filterMonth.value = nowMonth;
+    } else {
+        filterMonth.value = "All";
     }
 }
 
